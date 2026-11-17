@@ -15,6 +15,25 @@ class Settings(BaseSettings):
 
     public_base_url: str = "https://ahnut.ru"
 
+    # --- ЮKassa ---
+    yookassa_shop_id: str = ""
+    yookassa_secret_key: str = ""
+    yookassa_api_url: str = "https://api.yookassa.ru/v3"
+    # Принимать уведомления только с IP ЮKassa (за Caddy реальный IP берётся из X-Forwarded-For)
+    yookassa_check_ip: bool = True
+
+    # --- Внутренний конвейер (n8n ↔ web) ---
+    internal_token: str = ""  # общий секрет: n8n передаёт его в заголовке X-Internal-Token
+    n8n_generate_url: str = ""  # внутренний вебхук n8n, напр. http://n8n:5678/webhook/generate
+
+    # --- Нейросеть: одна точка доступа, провайдер меняется через .env ---
+    # OpenRouter: LLM_BASE_URL=https://openrouter.ai/api ; прямой API: https://api.anthropic.com
+    llm_base_url: str = "https://openrouter.ai/api"
+    llm_api_key: str = ""
+    llm_model_zapiska: str = "anthropic/claude-opus-5.5"
+    llm_model_svidanie: str = "anthropic/claude-opus-5.5"
+    llm_model_prince: str = "anthropic/claude-opus-5.5"
+
     @property
     def dsn(self) -> str:
         if self.database_url:
