@@ -92,12 +92,69 @@ class Final(BaseModel):
     finale: S(80) = ""
 
 
+class Polaroid(BaseModel):
+    photo: int = Field(ge=0)
+    caption: S(30) = ""
+
+
+class Polaroids(BaseModel):
+    type: Literal["polaroids"] = "polaroids"
+    step: S(30) = ""
+    hint: S(30) = "нажми на фото"
+    items: list[Polaroid] = Field(min_length=1, max_length=15)
+
+
+class QuizAnswer(BaseModel):
+    text: S(40)
+    correct: bool = False
+    reply: S(80) = Field("", description="Реакция на этот ответ")
+
+
+class Quiz(BaseModel):
+    type: Literal["quiz"] = "quiz"
+    step: S(30) = ""
+    question: S(80)
+    answers: list[QuizAnswer] = Field(min_length=2, max_length=4)
+
+
+class Moment(BaseModel):
+    when: S(30) = Field(description="Подпись времени: «лето 2021», «первое свидание»")
+    what: S(120)
+    icon: IconName = "star"
+
+
+class Timeline(BaseModel):
+    type: Literal["timeline"] = "timeline"
+    step: S(30) = ""
+    items: list[Moment] = Field(min_length=2, max_length=8)
+
+
+class Reasons(BaseModel):
+    type: Literal["reasons"] = "reasons"
+    step: S(30) = ""
+    title: S(50) = Field(description="Напр. «5 причин, почему ты лучшая»")
+    items: list[S(120)] = Field(min_length=2, max_length=12)
+    button: S(20) = "ещё"
+    last_button: S(20) = "по кругу"
+
+
+class Custom(BaseModel):
+    """Свой блок «Принца»: HTML+CSS+JS, написанные нейросетью. Корень — <section class="custom cx">.
+    JS получает root (элемент блока) и A (window.Ahnut: act, burst, rain, grow, icon, vibrate)."""
+    type: Literal["custom"] = "custom"
+    step: S(30) = ""
+    html: S(9000)
+    css: S(9000) = ""
+    js: S(9000) = ""
+
+
 class Footer(BaseModel):
     type: Literal["footer"] = "footer"
     text: S(60) = ""
 
 
-Block = Annotated[Union[Envelope, Hero, Phone, Cards, Letter, Final, Footer], Field(discriminator="type")]
+Block = Annotated[Union[Envelope, Hero, Phone, Polaroids, Cards, Letter, Quiz, Timeline, Reasons, Custom, Final, Footer],
+                  Field(discriminator="type")]
 
 
 class CardSpec(BaseModel):
@@ -109,7 +166,8 @@ class CardSpec(BaseModel):
     symbol: IconName = Field("heart", description="Значок для дождя и вспышек")
     decor: Literal["flowers", "stars", "snow", "balloons", "none"] = "flowers"
     title: S(60) = Field("", description="Заголовок вкладки браузера")
-    blocks: list[Block] = Field(min_length=2, max_length=12)
+    music: bool = Field(False, description="Включить фоновую музыку (только «Принц», если загружена)")
+    blocks: list[Block] = Field(min_length=2, max_length=16)
 
     @field_validator("accent", "accent2", "accent_deep")
     @classmethod
@@ -117,3 +175,31 @@ class CardSpec(BaseModel):
         if v is not None and not HEX.match(v):
             raise ValueError("цвет должен быть в формате #rrggbb")
         return v
+
+
+# Какие блоки доступны тарифам
+TIER_BLOCKS = {
+    "zapiska": {"envelope", "hero", "phone", "cards", "letter", "final", "footer"},
+    "svidanie": {"envelope", "hero", "phone", "polaroids", "cards", "letter", "quiz", "timeline", "reasons", "final", "footer"},
+    "prince": {"envelope", "hero", "phone", "polaroids", "cards", "letter", "quiz", "timeline", "reasons", "custom", "final", "footer"},
+}
+MAX_CUSTOM = 3
+
+
+def tier_problems(spec: CardSpec, tier: str, n_photos: int) -> list[str]:
+    """Что в открытке не подходит тарифу. Пустой список — всё в порядке."""
+    out = []
+    allowed = TIER_BLOCKS[tier]
+    for b in spec.blocks:
+        if b.type not in allowed:
+            out.append(f"блок {b.type} недоступен на этом тарифе")
+        for idx in [s.photo for s in getattr(b, "slides", [])] + [p.photo for p in (b.items if b.type == "polaroids" else [])]:
+            if idx >= max(n_photos, 1):
+                out.append(f"фото №{idx} не загружено (всего {n_photos})")
+    if sum(b.type == "custom" for b in spec.blocks) > MAX_CUSTOM:
+        out.append(f"своих блоков больше {MAX_CUSTOM}")
+    if sum(b.type == "final" for b in spec.blocks) > 1 or sum(b.type == "envelope" for b in spec.blocks) > 1:
+        out.append("конверт и финал — не больше одного")
+    if spec.music and tier != "prince":
+        out.append("музыка только на «Принце»")
+    return out

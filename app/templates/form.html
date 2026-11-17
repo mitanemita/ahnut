@@ -14,6 +14,8 @@
         <div class="opts">{% for k, v in q.options %}<label class="opt"><input type="radio" name="{{ q.id }}" value="{{ k }}" {{ 'checked' if cur == k }}><span>{{ v }}</span></label>{% endfor %}</div>
       {% elif q.kind == 'multi' %}
         <div class="opts" data-max="{{ q.max }}">{% for k, v in q.options %}<label class="opt"><input type="checkbox" name="{{ q.id }}" value="{{ k }}" {{ 'checked' if cur and k in cur }}><span>{{ v }}</span></label>{% endfor %}</div>
+      {% elif q.kind == 'color' %}
+        <input class="field color" type="color" name="{{ q.id }}" value="{{ cur or q.default }}">
       {% elif q.kind == 'short' %}
         <input class="field" name="{{ q.id }}" maxlength="{{ q.max }}" placeholder="{{ q.placeholder }}" value="{{ cur or '' }}">
       {% else %}
@@ -25,40 +27,64 @@
 
     <div class="q">
       <h3>Фото ({{ min_photos }}–{{ max_photos }})</h3>
-      <div class="photos" id="photos"></div>
-      <p class="hint">Фото сжимаем и убираем из них геометку. В нейросеть на «Записке» фото не отправляются.</p>
+      <div class="photos" id="photos" data-kind="photos" data-max="{{ max_photos }}"></div>
+      <p class="hint">Фото сжимаем и убираем из них геометку.
+        {% if o.tier == 'zapiska' %}В нейросеть на «Записке» фото не отправляются.{% else %}Нейросеть посмотрит на них после оплаты, чтобы подписать и расставить по открытке.{% endif %}</p>
     </div>
+    {% if max_refs %}
+    <div class="q">
+      <h3>Картинки-референсы (до {{ max_refs }})</h3>
+      <div class="photos" id="refs" data-kind="refs" data-max="{{ max_refs }}"></div>
+      <p class="hint">Что вам нравится по стилю: цвета, настроение, предметы. В открытку они не попадут.</p>
+    </div>
+    {% endif %}
+    {% if allow_music %}
+    <div class="q" id="musicq">
+      <h3>Своя музыка</h3>
+      <div id="music"></div>
+      <p class="hint">MP3/M4A до 12 МБ. Загружайте только то, на что у вас есть права (своя запись, свободная музыка) —
+        открытка доступна по ссылке, и ответственность за трек на отправителе.</p>
+    </div>
+    {% endif %}
 
     {% if not o.paid %}
     <div class="q"><h3>Email — пришлём ссылку на открытку</h3>
       <input class="field" type="email" name="email" autocomplete="email" placeholder="you@example.ru" value="{{ o.email or '' }}"></div>
     {% endif %}
 
-    <label class="check"><input type="checkbox" name="consent"> <span>Согласен(на) на обработку персональных данных (имена, фото, история) для создания открытки по <a class="link" href="/privacy" target="_blank">политике</a>, включая передачу текста анкеты нейросети за рубежом после оплаты.</span></label>
+    <label class="check"><input type="checkbox" name="consent"> <span>Согласен(на) на обработку персональных данных (имена, фото, история) для создания открытки по <a class="link" href="/privacy" target="_blank">политике</a>, включая передачу анкеты{% if o.tier != 'zapiska' %} и фото{% endif %} нейросети за рубежом после оплаты.</span></label>
     <p class="err" id="err"></p>
   </form>
 </main>
 <div class="bar"><button class="btn" id="go">{% if o.paid %}Собрать открытку{% else %}Оплатить {{ o.amount_rub }} ₽ и собрать{% endif %}</button></div>
 <script>
-const OID = {{ o.public_id|tojson }}, PAID = {{ 'true' if o.paid else 'false' }}, MAXP = {{ max_photos }};
-let photos = {{ photos|tojson }};
+const OID = {{ o.public_id|tojson }}, PAID = {{ 'true' if o.paid else 'false' }};
+let files = {photos: {{ photos|tojson }}, refs: {{ refs|tojson }}, music: {{ music|tojson }}};
 const $ = s => document.querySelector(s), err = t => $('#err').textContent = t || '';
-function drawPhotos(){
-  $('#photos').innerHTML = photos.map(n => `<div class="ph"><img src="/f/${OID}/${n}" alt=""><button type="button" data-n="${n}" aria-label="Удалить">×</button></div>`).join('')
-    + (photos.length < MAXP ? `<label class="add">+<input type="file" accept="image/*" multiple></label>` : '');
-  document.querySelectorAll('.ph button').forEach(b => b.onclick = async () => {
-    photos = (await (await fetch(`/api/orders/${OID}/photos/${b.dataset.n}`, {method:'DELETE'})).json()).photos; drawPhotos(); });
-  const inp = document.querySelector('.add input');
-  if (inp) inp.onchange = async () => {
-    for (const file of [...inp.files].slice(0, MAXP - photos.length)) {
-      const fd = new FormData(); fd.append('file', file); err('Загружаю фото…');
-      const r = await fetch(`/api/orders/${OID}/photos`, {method:'POST', body: fd}); const j = await r.json();
-      if (!r.ok) { err(j.detail); break; } photos = j.photos; err();
-    }
-    drawPhotos();
-  };
+async function send(kind, file) {
+  const fd = new FormData(); fd.append('file', file); err(kind === 'music' ? 'Загружаю музыку…' : 'Загружаю…');
+  const r = await fetch(`/api/orders/${OID}/files/${kind}`, {method:'POST', body: fd}); const j = await r.json();
+  if (!r.ok) { err(j.detail); return false; } files = j; err(); return true;
 }
-drawPhotos();
+async function del(name) { files = await (await fetch(`/api/orders/${OID}/files/${name}`, {method:'DELETE'})).json(); draw(); }
+function draw(){
+  document.querySelectorAll('.photos[data-kind]').forEach(box => {
+    const kind = box.dataset.kind, max = +box.dataset.max, list = files[kind] || [];
+    box.innerHTML = list.map(n => `<div class="ph"><img src="/f/${OID}/${n}" alt=""><button type="button" data-n="${n}" aria-label="Удалить">×</button></div>`).join('')
+      + (list.length < max ? `<label class="add">+<input type="file" accept="image/*" multiple></label>` : '');
+    box.querySelectorAll('.ph button').forEach(b => b.onclick = () => del(b.dataset.n));
+    const inp = box.querySelector('.add input');
+    if (inp) inp.onchange = async () => { for (const f of [...inp.files].slice(0, max - list.length)) if (!(await send(kind, f))) break; draw(); };
+  });
+  const m = $('#music');
+  if (m) {
+    m.innerHTML = files.music ? `<audio controls src="/f/${OID}/${files.music}" style="width:100%"></audio><p class="hint"><a href="#" class="link" id="mdel">Удалить трек</a></p>`
+      : `<label class="add" style="aspect-ratio:auto;min-height:56px;font-size:16px">♪ Загрузить трек<input type="file" accept="audio/*"></label>`;
+    const md = $('#mdel'); if (md) md.onclick = e => { e.preventDefault(); del(files.music); };
+    const mi = m.querySelector('input'); if (mi) mi.onchange = async () => { await send('music', mi.files[0]); draw(); };
+  }
+}
+draw();
 document.querySelectorAll('[data-max]').forEach(box => box.addEventListener('change', e => {
   const on = box.querySelectorAll('input:checked'); if (on.length > +box.dataset.max) e.target.checked = false; }));
 document.querySelectorAll('textarea').forEach(t => { const c = t.parentNode.querySelector('.cnt'); const u = () => c.textContent = t.value.length; t.oninput = u; u(); });
@@ -69,6 +95,7 @@ function collect(){
     if (!ins.length) return;
     if (ins[0].type === 'radio') a[id] = (q.querySelector(`[name="${id}"]:checked`) || {}).value;
     else if (ins[0].type === 'checkbox') a[id] = [...q.querySelectorAll(`[name="${id}"]:checked`)].map(x => x.value);
+    else if (ins[0].type === 'color') a[id] = ins[0].value;
     else a[id] = ins[0].value;
   });
   return a;

@@ -9,35 +9,34 @@
 {{ fonts_css|safe }}
 :root{ {% for k, v in vars.items() %}--{{ k }}:{{ v|safe }};{% endfor %} }
 {{ base_css|safe }}
-{{ dyn_css|safe }}
+{% for c in customs %}{{ c.css|safe }}
+{% endfor %}
 </style>
 </head>
-<body class="{{ 'has-env' if has_env }}">
+<body class="{{ 'has-env' if has_env }}" data-sym="{{ symbol }}">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>{{ symbols|safe }}</defs></svg>
-{% for t in triggers %}<input type="radio" class="trig" id="{{ t }}" name="g-{{ t }}" tabindex="-1">
-{% endfor %}
 <div class="bg"></div><div class="grain"></div><div class="vignette"></div>
-<div class="decor">{% for d in decor %}<div class="bl b{{ loop.index }}" style="left:{{ d.x }}%;top:{{ d.y }}%;--sz:{{ d.sz }}px;--r:{{ d.r }}deg">{{ d.svg|safe }}</div>{% endfor %}</div>
+<div class="decor">{% for d in decor %}<div class="bl{{ ' ico' if d.ico }}" style="left:{{ d.x }}%;top:{{ d.y }}%;--sz:{{ d.sz }}px;--r:{{ d.r }}deg">{{ d.svg|safe }}</div>{% endfor %}</div>
 <div class="rain">{% for r in rain %}<i style="--x:{{ r.x }}%;--s:{{ r.s }}px;--o:{{ r.o }};--d:{{ r.d }}s;--dl:{{ r.dl }}s;--rot:{{ r.rot }}deg">{{ icon(symbol)|safe }}</i>{% endfor %}</div>
-{% for b in bursts %}<div class="burst b-{{ b.key }}">{% for r in b.list %}<i style="--x:{{ r.x }}%;--s:{{ r.s }}px;--o:1;--d:{{ r.d }}s;--dl:{{ r.dl }}s;--rot:{{ r.rot }}deg">{{ icon(symbol)|safe }}</i>{% endfor %}</div>{% endfor %}
+{% if music_src %}<audio id="bgm" src="{{ music_src }}" loop preload="none"></audio><button class="music" type="button" aria-label="Музыка">♪</button>{% endif %}
 
 {% if envelope %}{% set e = envelope %}
 <div id="intro">
-  <div class="teaser">{% for ch in e.teaser %}<span class="ch" style="animation-delay:{{ '%.2f'|format(0.3 + loop.index0 * 0.09) }}s">{{ ch }}</span>{% endfor %}<span class="cur"></span></div>
-  <label for="t-env" class="envelope">
+  <div class="teaser" data-text="{{ e.teaser }}"><span></span><span class="cur"></span></div>
+  <div class="envelope" data-act="env" role="button" aria-label="Открыть конверт">
     <div class="env-back"></div>
     <div class="letter-in"><b>{{ e.letter_title }}</b>{% if e.letter_sub %}<small>{{ e.letter_sub }}</small>{% endif %}</div>
     <div class="flap"></div>
     <div class="env-front"><span class="tag">{{ e.to_tag }}</span></div>
     <div class="seal">{{ icon(e.seal_icon)|safe }}</div>
-  </label>
-  <label for="t-env" class="tap-hint">нажми на конверт</label>
+  </div>
+  <button type="button" class="tap-hint" data-act="env">нажми на конверт</button>
 </div>
 {% endif %}
 
 <main>
 {% for b in blocks %}
-{% if not loop.first and b.type not in ('footer',) and blocks[loop.index0-1].type != 'hero' %}<div class="divider"><i></i><i></i><i></i></div>{% endif %}
+{% if not loop.first and b.type != 'footer' and blocks[loop.index0-1].type != 'hero' %}<div class="divider"><i></i><i></i><i></i></div>{% endif %}
 
 {% if b.type == 'hero' %}
 <section class="hero">
@@ -56,24 +55,33 @@
     <div class="screen">
       <div class="statusbar"><span>▂▄▆█</span><span>{{ b.lock_time }}</span><span>100%</span></div>
       <div class="gallery">
-        {% for s in b.slides %}<label class="slide" for="t-p{{ loop.index }}">
+        {% for s in b.slides %}<div class="slide">
           {% if s.src %}<img src="{{ s.src }}" alt="" loading="lazy">{% else %}<div class="ph">{{ icon(symbol)|safe }}</div>{% endif %}
           {% if s.caption %}<div class="cap">{{ s.caption }}</div>{% endif %}
           <div class="counter">{{ loop.index }} из {{ b.slides|length }}</div>
-          <div class="dots">{% for on in s.dots %}<i class="{{ 'on' if on }}"></i>{% endfor %}</div>
-        </label>{% endfor %}
+        </div>{% endfor %}
       </div>
+      <div class="dots">{% for s in b.slides %}<i class="{{ 'on' if loop.first }}"></i>{% endfor %}</div>
       {% if b.slides|length > 1 %}<span class="swipe">‹</span>{% endif %}
       <div class="glare"></div>
       <div class="lock">
         <div class="lock-time"><div class="t">{{ b.lock_time }}</div>{% if b.lock_date %}<div class="d">{{ b.lock_date }}</div>{% endif %}</div>
         {% if b.notif_text %}<div class="lock-notif"><div class="who">{{ b.notif_from }} · сейчас</div><div class="msg">{{ b.notif_text }}</div></div>{% endif %}
         <div class="lock-wall">{{ icon(b.wallpaper_icon)|safe }}</div>
-        <label for="t-unlock" class="slider"><div class="slider-text"><span>{{ b.unlock_hint }}</span>{% if b.unlock_sub %}<small>{{ b.unlock_sub }}</small>{% endif %}</div><div class="knob">→</div></label>
+        <div class="slider"><div class="slider-text"><span>{{ b.unlock_hint }}</span>{% if b.unlock_sub %}<small>{{ b.unlock_sub }}</small>{% endif %}</div><div class="knob">→</div></div>
       </div>
     </div>
     <span class="home"></span>
   </div>
+</section>
+
+{% elif b.type == 'polaroids' %}
+<section>
+  {% if b.step %}<p class="step">{{ b.step }}</p>{% endif %}
+  <div class="stack" role="button">
+    {% for it in b['items']|reverse %}<figure class="pola">{% if it.src %}<img src="{{ it.src }}" alt="" loading="lazy">{% else %}<div class="ph">{{ icon(symbol)|safe }}</div>{% endif %}<figcaption>{{ it.caption }}</figcaption></figure>{% endfor %}
+  </div>
+  <p class="stack-hint">{{ b.hint }}</p>
 </section>
 
 {% elif b.type == 'cards' %}
@@ -82,31 +90,30 @@
   <div class="board">
   {% for it in b['items'] %}
     {% if it.kind == 'word' %}
-    <label for="{{ it.tid }}" id="{{ it.cid }}" class="card word wide" style="transform:rotate({{ it.rot }}deg)">
+    <div class="card word wide" role="button" style="transform:rotate({{ it.rot }}deg)">
       <span class="w1">{{ it.word_from }}</span><span class="w2">{{ it.word_to }}</span>
       {% if it.label %}<div class="lbl">{{ it.label }}</div>{% endif %}
       <div class="hint">нажми</div>
-    </label>
+    </div>
     {% elif it.kind == 'ticket' %}
-    <label for="{{ it.tid }}" id="{{ it.cid }}" class="card ticket wide" style="transform:rotate({{ it.rot }}deg)">
+    <div class="card ticket wide" role="button" style="transform:rotate({{ it.rot }}deg)">
       <div class="l"><div class="t1">{{ it.t_kicker }}</div><div class="t2">{{ it.t_title }}</div><div class="t3">{{ it.t_sub }}</div></div>
       <div class="r">{{ it.t_stub }}</div>
       {% if it.t_stamp %}<div class="stamp">{{ it.t_stamp }}</div>{% endif %}
-    </label>
+    </div>
     {% elif it.effect == 'flip' %}
-    <label for="{{ it.tid }}" id="{{ it.cid }}" class="card flip{{ ' wide' if it.wide }}" style="transform:rotate({{ it.rot }}deg)">
+    <div class="card flip{{ ' wide' if it.wide }}" role="button" style="transform:rotate({{ it.rot }}deg)">
       <div class="fl">
         <div class="side front"><div class="ic">{{ icon(it.icon)|safe }}</div>{% if it.line %}<div class="ln">{{ it.line }}</div>{% endif %}{% if it.label %}<div class="lbl">{{ it.label }}</div>{% endif %}<div class="hint">переверни</div></div>
         <div class="side back">{{ it.back }}</div>
       </div>
-    </label>
+    </div>
     {% else %}
-    <label for="{{ it.tid }}" id="{{ it.cid }}" class="card e-{{ it.effect }}{{ ' wide' if it.wide }}" style="transform:rotate({{ it.rot }}deg)">
-      {% if it.pops %}<span class="pop">{% for pp in it.pops %}<i style="--dx:{{ pp.dx }}px;--dy:{{ pp.dy }}px;animation-delay:{{ pp.dl }}s">{{ icon(it.pop_icon)|safe }}</i>{% endfor %}</span>{% endif %}
+    <div class="card e-{{ it.effect }}{{ ' wide' if it.wide }}" role="button" style="transform:rotate({{ it.rot }}deg)">
       <div class="ic">{{ icon(it.icon)|safe }}</div>
       {% if it.line %}<div class="ln">{{ it.line }}</div>{% endif %}
       {% if it.label %}<div class="lbl">{{ it.label }}</div>{% endif %}
-    </label>
+    </div>
     {% endif %}
   {% endfor %}
   </div>
@@ -115,11 +122,40 @@
 {% elif b.type == 'letter' %}
 <section>
   {% if b.step %}<p class="step">{{ b.step }}</p>{% endif %}
-  <label for="t-letter" class="note">
+  <div class="note" role="button">
     <div class="tx">{{ b.text }}</div>
     {% if b.signature %}<div class="sig">{{ b.signature }}</div>{% endif %}
     <span class="more">нажми, чтобы дочитать</span>
-  </label>
+  </div>
+</section>
+
+{% elif b.type == 'quiz' %}
+<section>
+  {% if b.step %}<p class="step">{{ b.step }}</p>{% endif %}
+  <div class="quiz"><h2 class="emboss">{{ b.question }}</h2>
+    {% for a in b.answers %}<button type="button" class="ans" data-ok="{{ 1 if a.correct else 0 }}" data-reply="{{ a.reply }}">{{ a.text }}</button>{% endfor %}
+    <div class="reply"></div></div>
+</section>
+
+{% elif b.type == 'timeline' %}
+<section>
+  {% if b.step %}<p class="step">{{ b.step }}</p>{% endif %}
+  <div class="tl">{% for m in b['items'] %}<div class="pt"><div class="dot">{{ icon(m.icon)|safe }}</div><div class="when">{{ m.when }}</div><div class="what">{{ m.what }}</div></div>{% endfor %}</div>
+</section>
+
+{% elif b.type == 'reasons' %}
+<section>
+  {% if b.step %}<p class="step">{{ b.step }}</p>{% endif %}
+  <div class="reasons"><h2 class="emboss">{{ b.title }}</h2>
+    <div class="box">{% for r in b['items'] %}<div class="rs" style="--r:{{ [-2,1,-1,2][loop.index0 % 4] }}deg">{{ r }}</div>{% endfor %}</div>
+    <div class="num"></div>
+    <button type="button" class="more" data-last="{{ b.last_button }}">{{ b.button }}</button></div>
+</section>
+
+{% elif b.type == 'custom' %}
+<section class="custom cx" id="{{ b.cid }}">
+  {% if b.step %}<p class="step">{{ b.step }}</p>{% endif %}
+  {{ b.html|safe }}
 </section>
 
 {% elif b.type == 'final' %}
@@ -127,13 +163,13 @@
   {% if b.step %}<p class="step">{{ b.step }}</p>{% endif %}
   <div class="scene-wrap">
     <svg class="scene" viewBox="0 0 360 280">{{ scene_svg|safe }}</svg>
-    <label for="t-fin" class="scene-hit" aria-label="{{ b.tap_hint }}"></label>
+    <div class="scene-hit" role="button" aria-label="{{ b.tap_hint }}"></div>
   </div>
   <p class="tap">{{ b.tap_hint }}</p>
   {% if b.question %}<div class="q emboss">{{ b.question }}</div>{% endif %}
   {% if b.yes %}<div class="btns{{ ' has-no' if b.no }}">
-    <label for="t-yes" class="btn yes">{{ b.yes }}</label>
-    {% for n in b.no %}<label for="t-no{{ loop.index }}" class="btn no n{{ loop.index }}">{{ n }}</label>{% endfor %}
+    <button type="button" class="btn yes">{{ b.yes }}</button>
+    {% if b.no %}<button type="button" class="btn no" data-words="{{ b.no|tojson|forceescape }}">{{ b.no[0] }}</button>{% endif %}
   </div>{% endif %}
   <div class="finale">{{ b.finale }}</div>
 </section>
@@ -143,5 +179,9 @@
 {% endif %}
 {% endfor %}
 </main>
+<script>{{ runtime_js|safe }}</script>
+{% for c in customs %}<script>(function(root, A){ try { {{ c.js|safe }}
+} catch (e) { (window.__cardErrors = window.__cardErrors || []).push(String(e)); } })(document.getElementById({{ c.cid|tojson }}), window.Ahnut);</script>
+{% endfor %}
 </body>
 </html>

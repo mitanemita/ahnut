@@ -42,9 +42,6 @@ RANGES = {
 DECOR_SLOTS = [(4, 18, 96, -18), (95, 30, 84, 16), (2, 52, 80, 10), (97, 64, 100, -12),
                (6, 86, 92, 20), (93, 90, 80, -22), (50, 101, 110, 0), (96, 6, 70, 30)]
 
-# Куда «убегает» кнопка «нет» после каждого нажатия
-RUNAWAY = ["translate(-40%,72px) rotate(10deg)", "translate(25%,-64px) rotate(-14deg)",
-           "translate(-150%,60px) rotate(8deg)", "translate(30%,84px) rotate(-8deg)", "translate(-120%,-50px) rotate(6deg)"]
 
 
 def _data_uri(path: Path, mime: str) -> str:
@@ -100,6 +97,11 @@ def _base_css() -> str:
     return re.sub(r"\n\s*\n", "\n", css).strip()
 
 
+@lru_cache
+def _runtime_js() -> str:
+    return (ASSETS / "card.js").read_text()
+
+
 def bloom_svg(p: Palette, k: int) -> str:
     """Цветок «бутон → цветок»: лепестки поворачиваются из бутона (CSS .bl.open)."""
     petals = "".join(
@@ -137,124 +139,72 @@ def sanitize(spec: CardSpec, recipient: str | None) -> CardSpec:
             if key in b:
                 b[key] = swap(b[key])
         for it in b.get("items", []):
-            it["icon"] = swap(it["icon"])
+            if isinstance(it, dict) and "icon" in it:
+                it["icon"] = swap(it["icon"])
         if b["type"] == "final" and b["scene"] in ROMANTIC_SCENES:
             b["scene"] = "hug"
     return CardSpec.model_validate(data)
 
 
 def render(spec: CardSpec, photos: list[str] | None = None, *, recipient: str | None = None,
-           asset_base: str = "/static", inline: bool = False) -> str:
+           asset_base: str = "/static", inline: bool = False, music_src: str | None = None) -> str:
+    """photos — адреса фото по порядку (или data: URI для самопроверки/файла)."""
     spec = sanitize(spec, recipient)
     photos = photos or []
     p = palette(spec.theme, spec.accent, spec.accent2, spec.accent_deep)
     seed = int(hashlib.sha1(spec.model_dump_json().encode()).hexdigest()[:8], 16)
     rnd = random.Random(seed)
+    src = lambda i: photos[i] if 0 <= i < len(photos) else None  # noqa: E731
 
-    triggers: list[str] = []
-    dyn: list[str] = []
     used_icons = {spec.symbol}
-    blocks = []
+    blocks, customs = [], []
     envelope: Envelope | None = None
     scene_svg = ""
-    card_n = 0
-
-    for b in spec.blocks:
+    for n, b in enumerate(spec.blocks):
         d = b.model_dump()
         if b.type == "envelope":
             envelope = b
-            triggers.insert(0, "t-env")
             used_icons.add(b.seal_icon)
             continue
         if b.type == "hero":
             used_icons.add(b.icon)
         elif b.type == "phone":
             used_icons.add(b.wallpaper_icon)
-            triggers.append("t-unlock")
-            n = len(b.slides)
-            for i, s in enumerate(d["slides"], 1):
-                s["src"] = photos[s["photo"]] if s["photo"] < len(photos) else None
-                s["dots"] = [j == i for j in range(1, n + 1)]
-                triggers.append(f"t-p{i}")
+            for s_ in d["slides"]:
+                s_["src"] = src(s_["photo"])
+        elif b.type == "polaroids":
+            for it in d["items"]:
+                it["src"] = src(it["photo"])
         elif b.type == "cards":
             for it in d["items"]:
-                card_n += 1
-                tid, cid = f"t-c{card_n}", f"c{card_n}"
-                it.update(tid=tid, cid=cid, rot=rnd.choice((-2, -1, 1, 2)))
-                triggers.append(tid)
+                it["rot"] = rnd.choice((-2, -1, 1, 2))
                 used_icons.add(it["icon"])
-                sel = f"#{tid}:checked ~ main #{cid}"
-                dyn.append(f"{sel} .hint{{opacity:0}}")
-                if it["kind"] == "word":
-                    dyn.append(f"{sel} .w1::after{{transform:rotate(-8deg) scaleX(1)}}{sel} .w2{{transform:scale(1)}}")
-                elif it["kind"] == "ticket":
-                    dyn.append(f"{sel} .r{{transform:translateX(16px) rotate(8deg);opacity:0}}"
-                               f"{sel} .stamp{{opacity:.9;transform:translateY(-50%) rotate(-74deg) scale(1)}}")
-                elif it["effect"] == "flip":
-                    dyn.append(f"{sel} .fl{{transform:rotateY(180deg)}}")
-                else:
-                    it["pop_icon"] = spec.symbol
-                    it["pops"] = [{"dx": rnd.randint(-100, 100), "dy": rnd.randint(-100, 60), "dl": rnd.choice((0, .1, .2))}
-                                  for _ in range(7)] if it["effect"] in ("burst", "shake") else []
-                    dyn.append(f"{sel} .pop i{{display:block;animation:shot 1s ease-out forwards}}")
-                    if it["effect"] == "spin":
-                        dyn.append(f"{sel} .ic{{animation-play-state:running}}")
-                    if it["effect"] == "shake":
-                        dyn.append(f"{sel} .ic{{animation:shake .9s ease}}")
-                    if it["effect"] == "burst":
-                        dyn.append(f"{sel} .ic{{animation:beat .8s ease}}")
-        elif b.type == "letter":
-            if "t-letter" not in triggers:
-                triggers.append("t-letter")
+        elif b.type == "timeline":
+            used_icons |= {m["icon"] for m in d["items"]}
+        elif b.type == "custom":
+            d["cid"] = f"cx{n}"
+            d["css"] = re.sub(r"#cx\b", f"#cx{n}", d["css"])  # стили своего блока — только внутри него
+            customs.append(d)
         elif b.type == "final":
             if not b.yes:
-                b = b.model_copy(update={"no": []})
                 d["no"] = []
-            triggers += ["t-fin"] + (["t-yes"] if b.yes else []) + [f"t-no{i}" for i in range(1, len(b.no) + 1)]
             scene_svg = SCENES[b.scene](p)
-            for i in range(1, len(b.no) + 1):
-                dyn.append(f"#t-no{i}:checked ~ main .btn.no.n{i}{{display:none}}")
-                if i < len(b.no):
-                    dyn.append(f"#t-no{i}:checked ~ main .btn.no.n{i+1}{{display:block;transform:{RUNAWAY[(i-1) % len(RUNAWAY)]}}}")
-            if not b.yes:
-                dyn.append("#t-fin:checked ~ main .finale{opacity:1;transition-delay:1.2s}")
         blocks.append(d)
 
-    # Декор: каждый бутон привязан к двум действиям — появляется после первого, раскрывается после обоих
     decor = []
-    acts = [t for t in triggers if not t.startswith("t-no")]
-    if spec.decor != "none" and acts:
+    if spec.decor != "none":
         kind = {"stars": "star", "snow": "snowflake", "balloons": "balloon"}.get(spec.decor)
         if kind:
             used_icons.add(kind)
-        order = {t: i for i, t in enumerate(triggers)}
         for k, (x, y, sz, r) in enumerate(DECOR_SLOTS, 1):
-            pair = sorted({acts[(2 * k - 2) % len(acts)], acts[(2 * k - 1) % len(acts)]}, key=order.get)
             svg = bloom_svg(p, k) if spec.decor == "flowers" else _icon_decor(kind)
-            decor.append({"x": x, "y": y, "sz": sz, "r": r, "svg": svg})
-            shown = f"transform:scale(1) rotate({r}deg)"
-            dyn.append(",".join(f"#{t}:checked ~ .decor .b{k}" for t in pair) + f"{{{shown}}}")
-            both = " ~ ".join(f"#{t}:checked" for t in pair) + f" ~ .decor .b{k}"
-            dyn.append(f"{both} .pt{{transform:rotate(var(--a))}}{both} .core{{opacity:1}}")
-            fin = "#t-yes" if "t-yes" in triggers else ("#t-fin" if "t-fin" in triggers else None)
-            if fin:
-                dyn.append(f"{fin}:checked ~ .decor .b{k}{{{shown};transition-delay:{.15*k:.2f}s}}"
-                           f"{fin}:checked ~ .decor .b{k} .pt{{transform:rotate(var(--a))}}{fin}:checked ~ .decor .b{k} .core{{opacity:1}}")
-        dyn.append(".bl .pt{transform:rotate(calc(var(--a)*.08)) scale(.5,.62)}" if spec.decor == "flowers"
-                   else ".bl svg{transform:scale(.7)}")
+            decor.append({"x": x, "y": y, "sz": sz, "r": r, "svg": svg, "ico": spec.decor != "flowers"})
 
-    # Дождь значков и вспышки на ключевые действия
     rain = [{"x": rnd.randint(0, 95), "s": rnd.randint(16, 28), "o": round(rnd.uniform(.25, .5), 2),
              "d": rnd.randint(9, 16), "dl": -rnd.randint(0, 14), "rot": rnd.randint(-200, 200)} for _ in range(7)]
-    bursts = []
-    for key, t in (("env", "t-env"), ("fin", "t-fin"), ("yes", "t-yes")):
-        if t in triggers:
-            items = [{"x": rnd.randint(0, 95), "s": rnd.randint(18, 40), "d": round(rnd.uniform(2.2, 4.2), 1),
-                      "dl": round(rnd.uniform(0, 1.6), 2), "rot": rnd.randint(-300, 300)} for _ in range(16)]
-            bursts.append({"key": key, "list": items})
-            dyn.append(f"#{t}:checked ~ .b-{key} i{{display:block;animation:fall var(--d) linear var(--dl) forwards}}")
-
-    used_icons |= {it for b in blocks for it in [b.get("icon")] if it}
+    # значки, которые могут понадобиться своим блокам «Принца»
+    if customs:
+        used_icons |= set(ic.ICONS) - ic.ROMANTIC_ICONS if recipient != "partner" else set(ic.ICONS)
     symbols = "".join(ic.symbol(n, p) for n in sorted(used_icons) if n in ic.ICONS)
 
     tpl = _env.get_template("card.html.j2")
@@ -263,12 +213,12 @@ def render(spec: CardSpec, photos: list[str] | None = None, *, recipient: str | 
         fonts_css=_fonts_css(asset_base, inline),
         vars=_vars(p, asset_base, inline),
         base_css=_base_css(),
-        dyn_css="\n".join(dyn),
+        runtime_js=_runtime_js(),
         symbols=symbols,
-        triggers=triggers,
-        decor=decor, rain=rain, bursts=bursts,
+        decor=decor, rain=rain,
         symbol=spec.symbol,
         icon=lambda n: ic.use(n),
         envelope=envelope, has_env=envelope is not None,
-        blocks=blocks, scene_svg=scene_svg,
+        blocks=blocks, scene_svg=scene_svg, customs=customs,
+        music_src=music_src if spec.music else None,
     )

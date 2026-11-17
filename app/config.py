@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # Только для разработки: «нейросеть» без сети, подставляет ответы анкеты в шаблон
     llm_fake: bool = False
 
+    # Браузер для самопроверки по скриншоту: ws://browser:3000/ в Docker; пусто — запуск локально
+    playwright_ws: str = ""
+
     # Файлы фото и открыток на диске сервера
     files_dir: str = "data/files"
 

@@ -52,6 +52,8 @@ class Order(Base):
     pd_consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     generation_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     photos: Mapped[list[str] | None] = mapped_column(JSON)  # имена файлов в data/files/orders/<public_id>/
+    refs: Mapped[list[str] | None] = mapped_column(JSON)    # картинки-референсы («Принц»)
+    music: Mapped[str | None] = mapped_column(String(64))   # свой трек («Принц»)
     ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

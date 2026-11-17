@@ -87,6 +87,8 @@ async def save_answers(public_id: str, body: AnswersIn, s: AsyncSession = Depend
     clean, errors = validate_answers(_questions(o), body.answers, body.complete)
     if body.complete and len(o.photos or []) < TIER_LIMITS[o.tier]["photos"][0]:
         errors.append("Добавьте хотя бы одно фото")
+    if body.complete and clean.get("music") == "own" and not o.music:
+        errors.append("Загрузите музыку или выберите «Без музыки»")
     if errors:
         raise HTTPException(422, "; ".join(errors))
     o.answers = clean

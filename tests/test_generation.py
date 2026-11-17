@@ -145,14 +145,24 @@ def _mock_model(monkeypatch, replies: list[str]):
         def __init__(self, t):
             self.content, self.stop_reason, self.usage = [Block(t)], "end_turn", Usage()
 
-    async def create(**kw):
-        sent.append(kw)
-        return Resp(replies[min(len(sent) - 1, len(replies) - 1)])
+    class Stream:
+        def __init__(self, kw):
+            sent.append(kw)
+            self.r = Resp(replies[min(len(sent) - 1, len(replies) - 1)])
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def get_final_message(self):
+            return self.r
 
     class C:
         class messages:  # noqa: N801
             pass
-    C.messages.create = staticmethod(create)
+    C.messages.stream = staticmethod(lambda **kw: Stream(kw))
     monkeypatch.setattr(llm, "_client", lambda: C())
     return sent
 

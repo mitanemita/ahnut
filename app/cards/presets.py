@@ -6,6 +6,7 @@ from pathlib import Path
 from app.cards.spec import CardSpec
 
 DIR = Path(__file__).parent / "presets"
+EXAMPLES = Path(__file__).parent / "examples"
 
 
 @lru_cache
@@ -24,3 +25,9 @@ def presets_for(recipient: str, occasion: str | None = None) -> list[str]:
         if recipient in m["recipients"] and (occasion is None or occasion in m["occasions"]):
             out.append(name)
     return out
+
+
+@lru_cache
+def all_examples() -> dict[str, dict]:
+    """Готовые примеры «Свидания» и «Принца» (для лендинга и как образцы в промте)."""
+    return {p.stem: json.loads(p.read_text()) for p in sorted(EXAMPLES.glob("*.json"))}

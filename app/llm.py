@@ -74,7 +74,8 @@ async def generate(order: Order, *, system: str, content: list[dict[str, Any]], 
         raise UnpaidOrderError(f"order {order.public_id} is not paid")
     if settings.llm_fake:
         from app import llm_fake
-        return llm_fake.generate(order, content, model_cls), {"fake": True}
+        data = llm_fake.generate(order, content, model_cls)
+        return model_cls.model_validate(post(data) if post else data), {"fake": True}
 
     usage_total: dict[str, Any] = {"input_tokens": 0, "output_tokens": 0, "calls": 0}
     messages: list[dict[str, Any]] = [{"role": "user", "content": content}]
@@ -85,10 +86,13 @@ async def generate(order: Order, *, system: str, content: list[dict[str, Any]], 
         if structured:
             kw["format"] = {"type": "json_schema", "schema": strict_schema(model_cls)}
         try:
-            resp = await _client().messages.create(
-                model=model_for_tier(order.tier), max_tokens=max_tokens, system=system,
+            # потоковый режим: у «Принца» длинные ответы, обычный запрос упёрся бы в таймаут
+            async with _client().messages.stream(
+                model=model_for_tier(order.tier), max_tokens=max_tokens,
+                system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
                 messages=messages, output_config=kw,
-            )
+            ) as stream:
+                resp = await stream.get_final_message()
         except anthropic.BadRequestError as e:
             if structured:  # провайдер не умеет structured outputs — переходим на обычный JSON
                 log.warning("structured outputs отклонены провайдером: %s", e)
@@ -99,8 +103,11 @@ async def generate(order: Order, *, system: str, content: list[dict[str, Any]], 
         if resp.usage:
             usage_total["input_tokens"] += resp.usage.input_tokens or 0
             usage_total["output_tokens"] += resp.usage.output_tokens or 0
+            usage_total["cache_read"] = usage_total.get("cache_read", 0) + (getattr(resp.usage, "cache_read_input_tokens", 0) or 0)
         if resp.stop_reason == "refusal":
             raise LLMError("модель отказалась выполнять запрос")
+        if resp.stop_reason == "max_tokens":
+            log.warning("ответ обрезан по max_tokens (%s)", max_tokens)
         text = next((b.text for b in resp.content if b.type == "text"), "")
         try:
             data = _extract_json(text)

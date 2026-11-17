@@ -49,15 +49,24 @@ services:
     env_file: .env
     environment:
       DB_HOST: db
+      PLAYWRIGHT_WS: ws://browser:3000/
     volumes:
       - files:/app/data/files   # фото и файлы открыток (на диске сервера, том Docker)
     depends_on:
       migrate: { condition: service_completed_successfully }
+      browser: { condition: service_started }
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')"]
       interval: 30s
       timeout: 5s
       retries: 3
+
+  # Браузер для самопроверки открыток «Принца» по скриншоту на 375px (версия = playwright в requirements.txt)
+  browser:
+    build: ./browser
+    restart: unless-stopped
+    init: true
+    mem_limit: 1500m
 
   n8n:
     image: n8nio/n8n:2.20.12

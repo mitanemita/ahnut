@@ -26,7 +26,7 @@ document.querySelectorAll('[name=recipient]').forEach(r => r.addEventListener('c
   const c = await (await fetch('/api/catalog?recipient=' + r.value)).json();
   $('#q-occasion .opts').innerHTML = Object.entries(c.occasions).map(([k,v]) => opt('occasion', k, esc(v))).join('');
   $('#q-tone .opts').innerHTML = Object.entries(c.tones).map(([k,v]) => opt('tone', k, esc(v))).join('');
-  $('#q-tier .tiers').innerHTML = Object.entries(c.tiers).map(([k,t]) => `<label class="opt tier"><input type="radio" name="tier" value="${k}" ${t.available?'':'disabled'} ${k==='zapiska'?'checked':''}><span><b>${esc(t.title)}</b><em>${t.price} ₽</em><small>${t.available ? 'до ' + t.photos + ' фото' : 'скоро'}</small></span></label>`).join('');
+  $('#q-tier .tiers').innerHTML = Object.entries(c.tiers).map(([k,t]) => `<label class="opt tier"><input type="radio" name="tier" value="${k}" ${t.available?'':'disabled'} ${k==='zapiska'?'checked':''}><span><b>${esc(t.title)}</b><em>${t.price} ₽</em><small>${({zapiska:'готовый шаблон, нейросеть пишет тексты', svidanie:'сборка из блоков, нейросеть смотрит фото', prince:'сцены с нуля, реализм, своя музыка'})[k]} · до ${t.photos} фото</small></span></label>`).join('');
   ['#q-occasion','#q-tone','#q-tier'].forEach(s => $(s).classList.add('hidden'));
   $('#q-occasion').classList.remove('hidden'); $('#bar').classList.add('hidden'); step(2);
   $('#q-occasion').scrollIntoView({behavior:'smooth', block:'start'});
