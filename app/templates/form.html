@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Анкета — Ахнуть{% endblock %}
+{% block body %}
+<main class="page">
+  <p class="kicker">{{ tier.title }} · {{ o.amount_rub }} ₽{% if o.paid %} · оплачено{% endif %}</p>
+  <h1>Расскажите о вас</h1>
+  <p class="lead hint">Почти всё — кнопками. Чем точнее ответы, тем больше открытка будет «про вас».</p>
+  <form id="f" onsubmit="return false">
+  {% for q in questions %}
+    <div class="q" data-q="{{ q.id }}">
+      <h3>{{ q.title }}</h3>
+      {% set cur = answers.get(q.id, q.get('default')) %}
+      {% if q.kind == 'choice' %}
+        <div class="opts">{% for k, v in q.options %}<label class="opt"><input type="radio" name="{{ q.id }}" value="{{ k }}" {{ 'checked' if cur == k }}><span>{{ v }}</span></label>{% endfor %}</div>
+      {% elif q.kind == 'multi' %}
+        <div class="opts" data-max="{{ q.max }}">{% for k, v in q.options %}<label class="opt"><input type="checkbox" name="{{ q.id }}" value="{{ k }}" {{ 'checked' if cur and k in cur }}><span>{{ v }}</span></label>{% endfor %}</div>
+      {% elif q.kind == 'short' %}
+        <input class="field" name="{{ q.id }}" maxlength="{{ q.max }}" placeholder="{{ q.placeholder }}" value="{{ cur or '' }}">
+      {% else %}
+        <textarea class="field" name="{{ q.id }}" maxlength="{{ q.max }}" placeholder="{{ q.placeholder }}">{{ cur or '' }}</textarea>
+        <p class="hint"><span class="cnt">0</span> / {{ q.max }}</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+    <div class="q">
+      <h3>Фото ({{ min_photos }}–{{ max_photos }})</h3>
+      <div class="photos" id="photos"></div>
+      <p class="hint">Фото сжимаем и убираем из них геометку. В нейросеть на «Записке» фото не отправляются.</p>
+    </div>
+
+    {% if not o.paid %}
+    <div class="q"><h3>Email — пришлём ссылку на открытку</h3>
+      <input class="field" type="email" name="email" autocomplete="email" placeholder="you@example.ru" value="{{ o.email or '' }}"></div>
+    {% endif %}
+
+    <label class="check"><input type="checkbox" name="consent"> <span>Согласен(на) на обработку персональных данных (имена, фото, история) для создания открытки по <a class="link" href="/privacy" target="_blank">политике</a>, включая передачу текста анкеты нейросети за рубежом после оплаты.</span></label>
+    <p class="err" id="err"></p>
+  </form>
+</main>
+<div class="bar"><button class="btn" id="go">{% if o.paid %}Собрать открытку{% else %}Оплатить {{ o.amount_rub }} ₽ и собрать{% endif %}</button></div>
+<script>
+const OID = {{ o.public_id|tojson }}, PAID = {{ 'true' if o.paid else 'false' }}, MAXP = {{ max_photos }};
+let photos = {{ photos|tojson }};
+const $ = s => document.querySelector(s), err = t => $('#err').textContent = t || '';
+function drawPhotos(){
+  $('#photos').innerHTML = photos.map(n => `<div class="ph"><img src="/f/${OID}/${n}" alt=""><button type="button" data-n="${n}" aria-label="Удалить">×</button></div>`).join('')
+    + (photos.length < MAXP ? `<label class="add">+<input type="file" accept="image/*" multiple></label>` : '');
+  document.querySelectorAll('.ph button').forEach(b => b.onclick = async () => {
+    photos = (await (await fetch(`/api/orders/${OID}/photos/${b.dataset.n}`, {method:'DELETE'})).json()).photos; drawPhotos(); });
+  const inp = document.querySelector('.add input');
+  if (inp) inp.onchange = async () => {
+    for (const file of [...inp.files].slice(0, MAXP - photos.length)) {
+      const fd = new FormData(); fd.append('file', file); err('Загружаю фото…');
+      const r = await fetch(`/api/orders/${OID}/photos`, {method:'POST', body: fd}); const j = await r.json();
+      if (!r.ok) { err(j.detail); break; } photos = j.photos; err();
+    }
+    drawPhotos();
+  };
+}
+drawPhotos();
+document.querySelectorAll('[data-max]').forEach(box => box.addEventListener('change', e => {
+  const on = box.querySelectorAll('input:checked'); if (on.length > +box.dataset.max) e.target.checked = false; }));
+document.querySelectorAll('textarea').forEach(t => { const c = t.parentNode.querySelector('.cnt'); const u = () => c.textContent = t.value.length; t.oninput = u; u(); });
+function collect(){
+  const a = {};
+  document.querySelectorAll('[data-q]').forEach(q => {
+    const id = q.dataset.q, ins = q.querySelectorAll(`[name="${id}"]`);
+    if (!ins.length) return;
+    if (ins[0].type === 'radio') a[id] = (q.querySelector(`[name="${id}"]:checked`) || {}).value;
+    else if (ins[0].type === 'checkbox') a[id] = [...q.querySelectorAll(`[name="${id}"]:checked`)].map(x => x.value);
+    else a[id] = ins[0].value;
+  });
+  return a;
+}
+let t; document.getElementById('f').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() =>
+  fetch(`/api/orders/${OID}/answers`, {method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({answers: collect()})}), 800); });
+$('#go').onclick = async () => {
+  err(); const consent = document.querySelector('[name=consent]').checked;
+  if (!consent) return err('Нужно согласие на обработку персональных данных');
+  const r = await fetch(`/api/orders/${OID}/answers`, {method:'PUT', headers:{'content-type':'application/json'},
+    body: JSON.stringify({answers: collect(), complete: true, pd_consent: true})});
+  const j = await r.json(); if (!r.ok) return err(j.detail);
+  if (PAID) { location.href = '/order/' + OID; return; }
+  const email = document.querySelector('[name=email]').value;
+  const p = await fetch(`/api/orders/${OID}/pay`, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({email})});
+  const pj = await p.json(); if (!p.ok) return err(typeof pj.detail === 'string' ? pj.detail : 'Проверьте email');
+  location.href = pj.confirmation_url;
+};
+</script>
+{% endblock %}

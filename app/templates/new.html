@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Новая открытка — Ахнуть{% endblock %}
+{% block body %}
+<main class="page">
+  <div class="steps"><i class="on" data-s="1"></i><i data-s="2"></i><i data-s="3"></i><i data-s="4"></i></div>
+  <h1>Кому дарим?</h1>
+  <p class="lead hint">От этого зависят поводы, тон и вся открытка.</p>
+
+  <div class="q" id="q-recipient"><div class="opts">
+    {% for k, v in recipients.items() %}<label class="opt"><input type="radio" name="recipient" value="{{ k }}"><span>{{ v }}</span></label>{% endfor %}
+  </div></div>
+
+  <div class="q hidden" id="q-occasion"><h3>Повод</h3><div class="opts"></div></div>
+  <div class="q hidden" id="q-tone"><h3>Тон</h3><div class="opts"></div></div>
+  <div class="q hidden" id="q-tier"><h3>Тариф</h3><div class="tiers"></div>
+    <p class="hint">В любой тариф входит хостинг ссылки на неделю и 2 правки.</p></div>
+  <p class="err" id="err"></p>
+</main>
+<div class="bar hidden" id="bar"><button class="btn" id="go">Дальше — анкета</button></div>
+<script>
+const $ = s => document.querySelector(s);
+const opt = (name, k, v, extra='') => `<label class="opt"><input type="radio" name="${name}" value="${k}" ${extra}><span>${v}</span></label>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function step(n){ document.querySelectorAll('.steps i').forEach(i => i.classList.toggle('on', +i.dataset.s <= n)); }
+document.querySelectorAll('[name=recipient]').forEach(r => r.addEventListener('change', async () => {
+  const c = await (await fetch('/api/catalog?recipient=' + r.value)).json();
+  $('#q-occasion .opts').innerHTML = Object.entries(c.occasions).map(([k,v]) => opt('occasion', k, esc(v))).join('');
+  $('#q-tone .opts').innerHTML = Object.entries(c.tones).map(([k,v]) => opt('tone', k, esc(v))).join('');
+  $('#q-tier .tiers').innerHTML = Object.entries(c.tiers).map(([k,t]) => `<label class="opt tier"><input type="radio" name="tier" value="${k}" ${t.available?'':'disabled'} ${k==='zapiska'?'checked':''}><span><b>${esc(t.title)}</b><em>${t.price} ₽</em><small>${t.available ? 'до ' + t.photos + ' фото' : 'скоро'}</small></span></label>`).join('');
+  ['#q-occasion','#q-tone','#q-tier'].forEach(s => $(s).classList.add('hidden'));
+  $('#q-occasion').classList.remove('hidden'); $('#bar').classList.add('hidden'); step(2);
+  $('#q-occasion').scrollIntoView({behavior:'smooth', block:'start'});
+  document.querySelectorAll('[name=occasion]').forEach(o => o.addEventListener('change', () => { $('#q-tone').classList.remove('hidden'); step(3); $('#q-tone').scrollIntoView({behavior:'smooth'}); }));
+  document.querySelectorAll('[name=tone]').forEach(o => o.addEventListener('change', () => { $('#q-tier').classList.remove('hidden'); $('#bar').classList.remove('hidden'); step(4); $('#q-tier').scrollIntoView({behavior:'smooth'}); }));
+}));
+$('#go').addEventListener('click', async () => {
+  const v = n => (document.querySelector(`[name=${n}]:checked`) || {}).value;
+  const body = {recipient: v('recipient'), occasion: v('occasion'), tone: v('tone'), tier: v('tier')};
+  if (Object.values(body).some(x => !x)) { $('#err').textContent = 'Выберите все пункты'; return; }
+  const r = await fetch('/api/orders', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body)});
+  const j = await r.json();
+  if (!r.ok) { $('#err').textContent = j.detail || 'Ошибка'; return; }
+  location.href = '/order/' + j.order_id + '/form';
+});
+</script>
+{% endblock %}

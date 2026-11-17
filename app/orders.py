@@ -77,12 +77,19 @@ class AnswersIn(BaseModel):
 
 @router.put("/api/orders/{public_id}/answers")
 async def save_answers(public_id: str, body: AnswersIn, s: AsyncSession = Depends(get_session)):
+    from app.forms import TIER_LIMITS, validate_answers
+    from app.web import _questions
     o = await _order(s, public_id)
     if o.generation_requested_at:
         raise HTTPException(409, "Анкета уже передана в работу")
     if body.complete and not body.pd_consent:
         raise HTTPException(422, "Нужно согласие на обработку персональных данных")
-    o.answers = body.answers
+    clean, errors = validate_answers(_questions(o), body.answers, body.complete)
+    if body.complete and len(o.photos or []) < TIER_LIMITS[o.tier]["photos"][0]:
+        errors.append("Добавьте хотя бы одно фото")
+    if errors:
+        raise HTTPException(422, "; ".join(errors))
+    o.answers = clean
     if body.complete:
         o.answers_complete = True
         o.pd_consent_at = datetime.now(timezone.utc)

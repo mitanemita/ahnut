@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     llm_model_zapiska: str = "anthropic/claude-opus-5.5"
     llm_model_svidanie: str = "anthropic/claude-opus-5.5"
     llm_model_prince: str = "anthropic/claude-opus-5.5"
+    # false — если провайдер не поддерживает structured outputs (тогда JSON проверяется после ответа)
+    llm_structured: bool = True
+    # Только для разработки: «нейросеть» без сети, подставляет ответы анкеты в шаблон
+    llm_fake: bool = False
+
+    # Файлы фото и открыток на диске сервера
+    files_dir: str = "data/files"
 
     @property
     def dsn(self) -> str:

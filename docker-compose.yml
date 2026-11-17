@@ -50,7 +50,7 @@ services:
     environment:
       DB_HOST: db
     volumes:
-      - ./data/files:/app/data/files   # фото и файлы открыток (на диске сервера)
+      - files:/app/data/files   # фото и файлы открыток (на диске сервера, том Docker)
     depends_on:
       migrate: { condition: service_completed_successfully }
     healthcheck:
@@ -88,3 +88,4 @@ volumes:
   n8n_data:
   caddy_data:
   caddy_config:
+  files:

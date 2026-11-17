@@ -1,30 +1,33 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Заказ — Ахнуть</title>
-  <link rel="stylesheet" href="/static/style.css">
-  {% if o.status in ("awaiting_payment", "queued", "generating") %}<meta http-equiv="refresh" content="10">{% endif %}
-</head>
-<body>
-  <main class="hero">
-    <p class="kicker">Заказ · {{ tier.title }} · {{ o.amount_rub }} ₽</p>
-    {% if o.status == "awaiting_payment" %}
-      <h2>Ждём подтверждение оплаты</h2>
-      <p class="lead">Обычно это занимает несколько секунд. Страница обновится сама.</p>
-    {% elif o.paid and not o.answers_complete %}
-      <h2>Оплата прошла</h2>
-      <p class="lead">Осталось заполнить анкету — и мы начнём собирать открытку.</p>
-    {% elif o.status in ("queued", "generating") %}
-      <h2>Открытка готовится</h2>
-      <p class="lead">Это займёт 1–3 минуты. Можно закрыть страницу — пришлём письмо, когда будет готово.</p>
-    {% elif o.status == "refunded" %}
-      <h2>Деньги возвращены</h2>
-    {% else %}
-      <h2>Заказ создан</h2>
-      <p class="lead">Статус: {{ o.status }}</p>
-    {% endif %}
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Заказ — Ахнуть{% endblock %}
+{% block head %}{% if o.status in ("awaiting_payment", "queued", "generating", "paid") and not (o.paid and not o.answers_complete) %}<meta http-equiv="refresh" content="6">{% endif %}{% endblock %}
+{% block body %}
+<main class="page">
+  <p class="kicker">Заказ · {{ tier.title }} · {{ o.amount_rub }} ₽</p>
+  {% if o.status == "awaiting_payment" %}
+    <h1>Ждём подтверждение оплаты</h1>
+    <p class="lead">Обычно это занимает несколько секунд. Страница обновится сама.</p>
+  {% elif o.paid and not o.answers_complete %}
+    <h1>Оплата прошла</h1>
+    <p class="lead">Осталось заполнить анкету — и мы начнём собирать открытку.</p>
+    <a class="btn" href="/order/{{ o.public_id }}/form">Заполнить анкету</a>
+  {% elif o.status in ("queued", "generating", "paid") %}
+    <h1>Открытка готовится</h1>
+    <p class="lead">Это займёт 1–3 минуты. Можно закрыть страницу — пришлём письмо, когда будет готово.</p>
+  {% elif o.status in ("ready", "published") %}
+    <h1>Готово! Посмотрите</h1>
+    <p class="lead hint">Это предпросмотр. Нажимайте, листайте — всё как у получателя.</p>
+    <iframe class="preview" src="/order/{{ o.public_id }}/card" title="Предпросмотр открытки"></iframe>
+    <p class="hint"><a class="link" href="/order/{{ o.public_id }}/card" target="_blank">Открыть на весь экран</a></p>
+  {% elif o.status == "failed" %}
+    <h1>Что-то пошло не так</h1>
+    <p class="lead">Нейросеть не справилась с первой попытки. Мы уже видим ошибку и перезапустим генерацию; деньги не пропадут.</p>
+  {% elif o.status == "refunded" %}
+    <h1>Деньги возвращены</h1>
+  {% else %}
+    <h1>Заказ создан</h1>
+    <p class="lead">Можно сначала оплатить, а анкету заполнить потом — или наоборот.</p>
+    <a class="btn" href="/order/{{ o.public_id }}/form">К анкете</a>
+  {% endif %}
+</main>
+{% endblock %}

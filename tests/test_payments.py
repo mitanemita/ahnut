@@ -83,9 +83,24 @@ def new_order(tier="zapiska", recipient="parent", occasion="birthday", tone="fam
     return r.json()
 
 
+def jpeg_bytes(color=(200, 100, 120)) -> bytes:
+    import io
+
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGB", (40, 30), color).save(buf, "JPEG")
+    return buf.getvalue()
+
+
+VALID = {"recipient_name": "Мама", "sender_name": "Аня", "mood": "warm", "symbol": "flower",
+         "known": "life", "message": "Спасибо за всё", "secret": "пироги по воскресеньям", "loves": ["cup"]}
+
+
 def fill_answers(oid, complete=True):
-    return client.put(f"/api/orders/{oid}/answers",
-                      json={"answers": {"name": "мама"}, "complete": complete, "pd_consent": True})
+    client.post(f"/api/orders/{oid}/photos", files={"file": ("a.jpg", jpeg_bytes(), "image/jpeg")})
+    r = client.put(f"/api/orders/{oid}/answers", json={"answers": VALID, "complete": complete, "pd_consent": True})
+    assert r.status_code == 200, r.text
+    return r
 
 
 def webhook(pid, event="payment.succeeded", body_status="succeeded"):
@@ -200,7 +215,7 @@ def test_return_from_payment_checks_api_not_redirect(fake, pipeline_calls):
 def test_answers_require_pd_consent():
     o = new_order()
     r = client.put(f"/api/orders/{o['order_id']}/answers",
-                   json={"answers": {"x": 1}, "complete": True, "pd_consent": False})
+                   json={"answers": VALID, "complete": True, "pd_consent": False})
     assert r.status_code == 422
 
 
@@ -232,6 +247,7 @@ def test_internal_generate_requires_token():
 async def test_llm_module_refuses_unpaid_order(llm_calls):
     from app.models import Order
     with pytest.raises(llm.UnpaidOrderError):
-        await llm.generate_json(Order(tier="zapiska", paid=False, public_id="x"),
-                                system="s", content=[{"type": "text", "text": "секрет"}], schema={})
+        from app.cards.spec import CardSpec
+        await llm.generate(Order(tier="zapiska", paid=False, public_id="x"),
+                           system="s", content=[{"type": "text", "text": "секрет"}], model_cls=CardSpec)
     assert llm_calls == []

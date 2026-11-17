@@ -7,6 +7,7 @@ os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_db}"
 os.environ["YOOKASSA_CHECK_IP"] = "false"
 os.environ["INTERNAL_TOKEN"] = "test-internal"
 os.environ["N8N_GENERATE_URL"] = ""
+os.environ["FILES_DIR"] = tempfile.mkdtemp()
 
 import pytest  # noqa: E402
 

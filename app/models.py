@@ -51,6 +51,21 @@ class Order(Base):
     answers_complete: Mapped[bool] = mapped_column(Boolean, default=False)
     pd_consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     generation_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    photos: Mapped[list[str] | None] = mapped_column(JSON)  # имена файлов в data/files/orders/<public_id>/
+    ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Card(Base):
+    """Версии открытки: генерация и каждая правка — новая запись (можно откатиться)."""
+    __tablename__ = "cards"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    kind: Mapped[str] = mapped_column(String(16), default="generate")  # generate | edit
+    spec: Mapped[dict[str, Any]] = mapped_column(JSON)
+    usage: Mapped[dict[str, Any] | None] = mapped_column(JSON)  # токены — для подсчёта себестоимости
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Payment(Base):
