@@ -1,0 +1,136 @@
+{
+ "meta": {
+  "title": "Паре: извинение",
+  "recipients": [
+   "partner"
+  ],
+  "occasions": [
+   "sorry",
+   "anniversary",
+   "valentine",
+   "just_because",
+   "miss_you"
+  ],
+  "tones": [
+   "romantic",
+   "funny"
+  ]
+ },
+ "spec": {
+  "theme": "noir_pink",
+  "symbol": "heart",
+  "decor": "flowers",
+  "title": "прости, кис",
+  "blocks": [
+   {
+    "type": "envelope",
+    "teaser": "я не хотел…",
+    "letter_title": "прости,",
+    "letter_sub": "кис",
+    "to_tag": "для котика",
+    "seal_icon": "heart"
+   },
+   {
+    "type": "hero",
+    "title": "прости, кис",
+    "from_label": "от меня",
+    "to_label": "для тебя",
+    "icon": "heart"
+   },
+   {
+    "type": "phone",
+    "step": "01 · наши кадры",
+    "lock_time": "18:50",
+    "lock_date": "вторник, 23 июня",
+    "notif_from": "я",
+    "notif_text": "я не хотел. открой, там мы",
+    "unlock_hint": "сдвинь вправо",
+    "unlock_sub": "(аккуратно)",
+    "wallpaper_icon": "heart",
+    "slides": [
+     {
+      "photo": 0,
+      "caption": "наша первая встреча"
+     },
+     {
+      "photo": 1,
+      "caption": "тут я пропал"
+     },
+     {
+      "photo": 2,
+      "caption": "даже когда плохо — с тобой хорошо"
+     }
+    ]
+   },
+   {
+    "type": "cards",
+    "step": "02 · только наше",
+    "items": [
+     {
+      "kind": "word",
+      "word_from": "дуюсь",
+      "word_to": "мир",
+      "label": "нажми"
+     },
+     {
+      "kind": "icon",
+      "icon": "chess",
+      "effect": "burst",
+      "line": "ты выиграла",
+      "label": "шахматы"
+     },
+     {
+      "kind": "icon",
+      "icon": "vinyl",
+      "effect": "spin",
+      "line": "станцуем",
+      "label": "наша песня"
+     },
+     {
+      "kind": "icon",
+      "icon": "pizza",
+      "effect": "shake",
+      "line": "последний кусок твой",
+      "label": "клянусь"
+     },
+     {
+      "kind": "icon",
+      "icon": "cat",
+      "effect": "flip",
+      "line": "кис",
+      "label": "это ты",
+      "back": "самая красивая, даже когда злишься"
+     },
+     {
+      "kind": "ticket",
+      "t_kicker": "билет · 1 сеанс · 2 места",
+      "t_title": "наше кино",
+      "t_sub": "досмотрим?",
+      "t_stub": "оторви",
+      "t_stamp": "договорились"
+     }
+    ]
+   },
+   {
+    "type": "final",
+    "step": "03 · мы",
+    "scene": "couple",
+    "tap_hint": "нажми на сердце",
+    "question": "мир?",
+    "yes": "мир",
+    "no": [
+     "нет",
+     "точно нет",
+     "ну кис?",
+     "нет",
+     "нет"
+    ],
+    "finale": "а ты мне нравишься"
+   },
+   {
+    "type": "footer",
+    "text": "сделано с тревожностью и любовью"
+   }
+  ]
+ }
+}

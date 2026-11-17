@@ -1,0 +1,118 @@
+{
+ "meta": {
+  "title": "Новый год",
+  "recipients": [
+   "partner",
+   "parent",
+   "grandparent",
+   "friend",
+   "sibling",
+   "child",
+   "colleague",
+   "teacher",
+   "other"
+  ],
+  "occasions": [
+   "new_year"
+  ],
+  "tones": [
+   "family",
+   "friendly",
+   "solemn",
+   "business",
+   "romantic",
+   "funny"
+  ]
+ },
+ "spec": {
+  "theme": "navy_gold",
+  "symbol": "snowflake",
+  "decor": "snow",
+  "title": "С Новым годом!",
+  "blocks": [
+   {
+    "type": "envelope",
+    "teaser": "почта Деда Мороза",
+    "letter_title": "С Новым",
+    "letter_sub": "годом!",
+    "to_tag": "для семьи Ивановых",
+    "seal_icon": "star"
+   },
+   {
+    "type": "hero",
+    "title": "С Новым годом!",
+    "from_label": "от Смирновых",
+    "to_label": "Ивановым",
+    "icon": "tree"
+   },
+   {
+    "type": "phone",
+    "step": "01 · каким был год",
+    "lock_time": "23:59",
+    "lock_date": "31 декабря",
+    "notif_from": "Смирновы",
+    "notif_text": "открой, тут наш год",
+    "unlock_hint": "сдвинь вправо",
+    "wallpaper_icon": "tree",
+    "slides": [
+     {
+      "photo": 0,
+      "caption": "весна"
+     },
+     {
+      "photo": 1,
+      "caption": "лето"
+     },
+     {
+      "photo": 2,
+      "caption": "осень"
+     }
+    ]
+   },
+   {
+    "type": "cards",
+    "step": "02 · желаем",
+    "items": [
+     {
+      "kind": "icon",
+      "icon": "house",
+      "effect": "flip",
+      "line": "уюта",
+      "label": "дома",
+      "back": "Тёплых вечеров и полного дома гостей"
+     },
+     {
+      "kind": "icon",
+      "icon": "plane",
+      "effect": "flip",
+      "line": "путешествий",
+      "label": "новых",
+      "back": "Пусть в новом году будет хотя бы одно море"
+     },
+     {
+      "kind": "icon",
+      "icon": "star",
+      "effect": "burst",
+      "line": "чудес",
+      "label": "больших и маленьких",
+      "wide": true
+     }
+    ]
+   },
+   {
+    "type": "final",
+    "step": "03 · подарок",
+    "scene": "gift",
+    "tap_hint": "открой подарок",
+    "question": "",
+    "yes": "",
+    "no": [],
+    "finale": "Пусть 2027-й будет добрым!"
+   },
+   {
+    "type": "footer",
+    "text": "обнимаем, Смирновы"
+   }
+  ]
+ }
+}

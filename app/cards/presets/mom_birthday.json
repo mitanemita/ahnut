@@ -1,0 +1,118 @@
+{
+ "meta": {
+  "title": "Маме: день рождения",
+  "recipients": [
+   "parent",
+   "grandparent"
+  ],
+  "occasions": [
+   "birthday",
+   "mothers_day",
+   "march8",
+   "jubilee",
+   "thanks",
+   "just_because"
+  ],
+  "tones": [
+   "family",
+   "solemn"
+  ]
+ },
+ "spec": {
+  "theme": "cream_rose",
+  "symbol": "flower",
+  "decor": "flowers",
+  "title": "Маме — с днём рождения",
+  "blocks": [
+   {
+    "type": "envelope",
+    "teaser": "мам, это тебе…",
+    "letter_title": "с днём",
+    "letter_sub": "рождения",
+    "to_tag": "для мамы",
+    "seal_icon": "flower"
+   },
+   {
+    "type": "hero",
+    "title": "Мамочка, с днём рождения",
+    "from_label": "от дочки",
+    "to_label": "для мамы",
+    "icon": "flower"
+   },
+   {
+    "type": "letter",
+    "step": "01 · несколько слов",
+    "text": "Мам, спасибо тебе за всё: за пироги по воскресеньям, за то, что всегда берёшь трубку, и за то, что веришь в меня даже тогда, когда я сама не верю.\n\nЖелаю тебе здоровья, тёплых вечеров и поводов улыбаться каждый день. Ты самая лучшая.",
+    "signature": "твоя Аня"
+   },
+   {
+    "type": "phone",
+    "step": "02 · наши моменты",
+    "lock_time": "09:00",
+    "lock_date": "твой день",
+    "notif_from": "дочка",
+    "notif_text": "мам, открой — тут наши фото",
+    "unlock_hint": "сдвинь вправо",
+    "wallpaper_icon": "flower",
+    "slides": [
+     {
+      "photo": 0,
+      "caption": "лето на даче"
+     },
+     {
+      "photo": 1,
+      "caption": "твой фирменный пирог"
+     },
+     {
+      "photo": 2,
+      "caption": "мы"
+     }
+    ]
+   },
+   {
+    "type": "cards",
+    "step": "03 · за что спасибо",
+    "items": [
+     {
+      "kind": "icon",
+      "icon": "cake",
+      "effect": "flip",
+      "line": "пироги",
+      "label": "лучшие",
+      "back": "Никто не печёт так, как ты. Рецепт передашь?"
+     },
+     {
+      "kind": "icon",
+      "icon": "cup",
+      "effect": "flip",
+      "line": "чай и разговоры",
+      "label": "по вечерам",
+      "back": "Самые важные разговоры были на нашей кухне"
+     },
+     {
+      "kind": "icon",
+      "icon": "house",
+      "effect": "burst",
+      "line": "дом",
+      "label": "там, где ты",
+      "wide": true
+     }
+    ]
+   },
+   {
+    "type": "final",
+    "step": "04 · обнимаю",
+    "scene": "hug",
+    "tap_hint": "нажми, чтобы обнять",
+    "question": "",
+    "yes": "",
+    "no": [],
+    "finale": "люблю тебя, мам"
+   },
+   {
+    "type": "footer",
+    "text": "с любовью"
+   }
+  ]
+ }
+}

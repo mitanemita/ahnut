@@ -1,0 +1,89 @@
+{
+ "meta": {
+  "title": "Бабушке: тёплые слова",
+  "recipients": [
+   "grandparent",
+   "parent"
+  ],
+  "occasions": [
+   "birthday",
+   "jubilee",
+   "thanks",
+   "just_because",
+   "miss_you",
+   "get_well",
+   "march8"
+  ],
+  "tones": [
+   "family",
+   "solemn"
+  ]
+ },
+ "spec": {
+  "theme": "cream_rose",
+  "accent": "#b5654a",
+  "accent2": "#f3c7a8",
+  "accent_deep": "#6e3320",
+  "symbol": "sun",
+  "decor": "flowers",
+  "title": "Бабуле",
+  "blocks": [
+   {
+    "type": "envelope",
+    "teaser": "бабуль, это от меня",
+    "letter_title": "Бабуле",
+    "letter_sub": "с любовью",
+    "to_tag": "для бабушки Вали",
+    "seal_icon": "sun"
+   },
+   {
+    "type": "hero",
+    "title": "Любимой бабуле",
+    "from_label": "от внучки",
+    "to_label": "бабушке Вале",
+    "icon": "sun"
+   },
+   {
+    "type": "letter",
+    "step": "01 · письмо",
+    "text": "Бабуль, я помню, как ты учила меня печь блины и рассказывала сказки, которых нет ни в одной книжке.\n\nСпасибо за твоё тепло, за варенье, за молитвы и за то, что ты у нас есть. Береги себя — мы скоро приедем!",
+    "signature": "твоя Катюша"
+   },
+   {
+    "type": "cards",
+    "step": "02 · помню",
+    "items": [
+     {
+      "kind": "icon",
+      "icon": "book",
+      "effect": "flip",
+      "line": "сказки",
+      "label": "на ночь",
+      "back": "Про Ивана и серого волка — лучше всех"
+     },
+     {
+      "kind": "icon",
+      "icon": "flower",
+      "effect": "burst",
+      "line": "огород",
+      "label": "твои розы"
+     }
+    ]
+   },
+   {
+    "type": "final",
+    "step": "03 · обнимаю",
+    "scene": "hug",
+    "tap_hint": "нажми — обниму",
+    "question": "",
+    "yes": "",
+    "no": [],
+    "finale": "люблю тебя, бабуль"
+   },
+   {
+    "type": "footer",
+    "text": "внучка"
+   }
+  ]
+ }
+}

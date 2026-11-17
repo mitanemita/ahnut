@@ -1,0 +1,103 @@
+{
+ "meta": {
+  "title": "Коллеге: спасибо",
+  "recipients": [
+   "colleague",
+   "teacher"
+  ],
+  "occasions": [
+   "thanks",
+   "birthday",
+   "success",
+   "retirement",
+   "corporate",
+   "teachers_day",
+   "new_year"
+  ],
+  "tones": [
+   "business",
+   "solemn",
+   "friendly"
+  ]
+ },
+ "spec": {
+  "theme": "mint_fresh",
+  "symbol": "star",
+  "decor": "stars",
+  "title": "Спасибо за работу",
+  "blocks": [
+   {
+    "type": "envelope",
+    "teaser": "Ирина Петровна, это вам",
+    "letter_title": "Спасибо!",
+    "letter_sub": "от команды",
+    "to_tag": "лучшему руководителю",
+    "seal_icon": "star"
+   },
+   {
+    "type": "hero",
+    "title": "Спасибо за этот год",
+    "from_label": "от отдела маркетинга",
+    "to_label": "Ирине Петровне",
+    "icon": "trophy"
+   },
+   {
+    "type": "letter",
+    "step": "01 · от всех нас",
+    "text": "Ирина Петровна, спасибо за спокойствие в дедлайны, за честную обратную связь и за то, что с вами любой аврал превращается в план.\n\nЭтот год был непростым, но мы справились — во многом благодаря вам.",
+    "signature": "ваша команда"
+   },
+   {
+    "type": "cards",
+    "step": "02 · итоги года",
+    "items": [
+     {
+      "kind": "icon",
+      "icon": "medal",
+      "effect": "burst",
+      "line": "12 запусков",
+      "label": "без срывов"
+     },
+     {
+      "kind": "icon",
+      "icon": "cup",
+      "effect": "flip",
+      "line": "планёрки",
+      "label": "с кофе",
+      "back": "Самые короткие и полезные планёрки в компании"
+     },
+     {
+      "kind": "icon",
+      "icon": "book",
+      "effect": "flip",
+      "line": "наставник",
+      "label": "для новичков",
+      "back": "Трое новичков стали сильными специалистами"
+     },
+     {
+      "kind": "icon",
+      "icon": "star",
+      "effect": "burst",
+      "line": "лучшая команда",
+      "label": "по версии нас",
+      "wide": false
+     }
+    ]
+   },
+   {
+    "type": "final",
+    "step": "03 · аплодисменты",
+    "scene": "trophy",
+    "tap_hint": "нажми на кубок",
+    "question": "",
+    "yes": "",
+    "no": [],
+    "finale": "Спасибо! Мы рады работать с вами"
+   },
+   {
+    "type": "footer",
+    "text": "команда маркетинга"
+   }
+  ]
+ }
+}

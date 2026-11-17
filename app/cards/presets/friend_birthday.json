@@ -1,0 +1,124 @@
+{
+ "meta": {
+  "title": "Другу: день рождения",
+  "recipients": [
+   "friend",
+   "sibling"
+  ],
+  "occasions": [
+   "birthday",
+   "success",
+   "thanks",
+   "just_because",
+   "feb23",
+   "march8"
+  ],
+  "tones": [
+   "friendly",
+   "funny"
+  ]
+ },
+ "spec": {
+  "theme": "kraft_sun",
+  "symbol": "star",
+  "decor": "balloons",
+  "title": "С днюхой, бро",
+  "blocks": [
+   {
+    "type": "envelope",
+    "teaser": "открывай, старина",
+    "letter_title": "С ДНЮХОЙ",
+    "letter_sub": "бро",
+    "to_tag": "для лучшего друга",
+    "seal_icon": "star"
+   },
+   {
+    "type": "hero",
+    "title": "С днюхой, бро!",
+    "from_label": "от тебя знаешь кого",
+    "to_label": "для легенды",
+    "icon": "trophy"
+   },
+   {
+    "type": "cards",
+    "step": "01 · наши хиты",
+    "items": [
+     {
+      "kind": "icon",
+      "icon": "gamepad",
+      "effect": "burst",
+      "line": "до 4 утра",
+      "label": "ещё катку"
+     },
+     {
+      "kind": "icon",
+      "icon": "pizza",
+      "effect": "shake",
+      "line": "пицца в 3 ночи",
+      "label": "традиция"
+     },
+     {
+      "kind": "icon",
+      "icon": "ball",
+      "effect": "spin",
+      "line": "пенальти",
+      "label": "ты промазал"
+     },
+     {
+      "kind": "icon",
+      "icon": "guitar",
+      "effect": "flip",
+      "line": "песни у костра",
+      "label": "три аккорда",
+      "back": "Твоя «Звезда по имени» всё ещё легендарна"
+     },
+     {
+      "kind": "word",
+      "word_from": "старый",
+      "word_to": "опытный",
+      "label": "+1 год"
+     }
+    ]
+   },
+   {
+    "type": "phone",
+    "step": "02 · компромат",
+    "lock_time": "03:12",
+    "lock_date": "та самая ночь",
+    "notif_from": "друг",
+    "notif_text": "смотри, что я нашёл",
+    "unlock_hint": "сдвинь",
+    "unlock_sub": "(если не боишься)",
+    "wallpaper_icon": "star",
+    "slides": [
+     {
+      "photo": 0,
+      "caption": "выпускной"
+     },
+     {
+      "photo": 1,
+      "caption": "та самая поездка"
+     }
+    ]
+   },
+   {
+    "type": "final",
+    "step": "03 · дай пять",
+    "scene": "highfive",
+    "tap_hint": "дай пять",
+    "question": "ещё год дружим?",
+    "yes": "конечно",
+    "no": [
+     "не",
+     "подумаю",
+     "ладно…"
+    ],
+    "finale": "с днюхой, брат. ты лучший"
+   },
+   {
+    "type": "footer",
+    "text": "сделано другом, который не забыл"
+   }
+  ]
+ }
+}

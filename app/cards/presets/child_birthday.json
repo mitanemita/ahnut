@@ -1,0 +1,91 @@
+{
+ "meta": {
+  "title": "Ребёнку: день рождения",
+  "recipients": [
+   "child"
+  ],
+  "occasions": [
+   "birthday",
+   "new_year",
+   "graduation",
+   "success",
+   "get_well"
+  ],
+  "tones": [
+   "family",
+   "funny"
+  ]
+ },
+ "spec": {
+  "theme": "candy_sky",
+  "symbol": "balloon",
+  "decor": "balloons",
+  "title": "С днём рождения, Миша!",
+  "blocks": [
+   {
+    "type": "envelope",
+    "teaser": "Миша, тебе письмо!",
+    "letter_title": "Ура!",
+    "letter_sub": "тебе 7!",
+    "to_tag": "для Миши",
+    "seal_icon": "star"
+   },
+   {
+    "type": "hero",
+    "title": "Мише 7 лет!",
+    "from_label": "от мамы и папы",
+    "to_label": "для Миши",
+    "icon": "balloon"
+   },
+   {
+    "type": "cards",
+    "step": "01 · что ты любишь",
+    "items": [
+     {
+      "kind": "icon",
+      "icon": "paw",
+      "effect": "burst",
+      "line": "собаки",
+      "label": "гав!"
+     },
+     {
+      "kind": "icon",
+      "icon": "ball",
+      "effect": "spin",
+      "line": "футбол",
+      "label": "гол!"
+     },
+     {
+      "kind": "icon",
+      "icon": "plane",
+      "effect": "shake",
+      "line": "самолёты",
+      "label": "полетели"
+     },
+     {
+      "kind": "icon",
+      "icon": "gift",
+      "effect": "flip",
+      "line": "сюрприз",
+      "label": "переверни",
+      "back": "Загляни под кровать — там подарок!"
+     }
+    ]
+   },
+   {
+    "type": "final",
+    "step": "02 · загадай желание",
+    "scene": "cake",
+    "tap_hint": "задуй свечи — нажми",
+    "question": "",
+    "yes": "",
+    "no": [],
+    "finale": "С днём рождения, Миша! Мы тебя очень любим"
+   },
+   {
+    "type": "footer",
+    "text": "мама и папа"
+   }
+  ]
+ }
+}
