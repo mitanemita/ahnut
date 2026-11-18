@@ -41,6 +41,22 @@ class Settings(BaseSettings):
     # Браузер для самопроверки по скриншоту: ws://browser:3000/ в Docker; пусто — запуск локально
     playwright_ws: str = ""
 
+    # Секрет для подписи cookie (пароль на открытку). Сгенерировать: openssl rand -hex 32
+    secret_key: str = "dev-secret-change-me"
+
+    # --- Письма (UniOne) ---
+    unione_api_key: str = ""
+    unione_api_url: str = "https://go1.unisender.ru/ru/transactional/api/v1/email/send.json"
+    email_from: str = "noreply@ahnut.ru"
+    email_from_name: str = "Ахнуть"
+    admin_email: str = ""          # сюда — уведомления о сбоях генерации
+    support_email: str = "hello@ahnut.ru"  # публикуется в оферте/политике и на страницах
+
+    # Сроки хранения персональных данных после окончания срока ссылки (152-ФЗ: не дольше, чем нужно)
+    purge_after_days: int = 30
+    # Фоновые задачи (напоминания, удаление) — раз в N минут
+    scheduler_minutes: int = 30
+
     # Файлы фото и открыток на диске сервера
     files_dir: str = "data/files"
 

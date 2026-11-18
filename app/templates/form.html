@@ -53,6 +53,8 @@
     {% endif %}
 
     <label class="check"><input type="checkbox" name="consent"> <span>Согласен(на) на обработку персональных данных (имена, фото, история) для создания открытки по <a class="link" href="/privacy" target="_blank">политике</a>, включая передачу анкеты{% if o.tier != 'zapiska' %} и фото{% endif %} нейросети за рубежом после оплаты.</span></label>
+    <p class="hint">Оплачивая, вы принимаете <a class="link" href="/offer" target="_blank">оферту</a>. Деньги за созданную открытку
+      не возвращаются — пожелания вносятся правками ({{ 2 }} входят в тариф, дальше можно докупить).</p>
     <p class="err" id="err"></p>
   </form>
 </main>

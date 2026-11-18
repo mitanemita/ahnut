@@ -31,6 +31,14 @@ def _names(tpl: dict, order: Order) -> dict:
 
 def generate(order: Order, content: list[dict], model_cls: type[BaseModel]) -> dict:
     text = content[0]["text"]
+    card = re.search(r"<card>\n(.*)\n</card>", text, re.S)
+    if card:  # правка: «нейросеть» ставит текст просьбы в заголовок — видно, что правка применилась
+        spec = json.loads(card.group(1))
+        req = re.search(r"<edit>\n(.*)\n</edit>", text, re.S).group(1)
+        for b in spec["blocks"]:
+            if b["type"] == "hero":
+                b["title"] = req[:48]
+        return spec
     m = re.search(r"<template>\n(.*)\n</template>", text, re.S)
     if m:
         return _names(json.loads(m.group(1)), order)

@@ -1,5 +1,6 @@
 """Этап 2: оплата через ЮKassa. Главное правило — без подтверждённой оплаты генерация невозможна."""
 import json
+import uuid
 
 import httpx
 import pytest
@@ -23,7 +24,7 @@ class FakeYooKassa:
         if request.method == "POST" and request.url.path.endswith("/payments"):
             body = json.loads(request.content)
             assert request.headers.get("Idempotence-Key")
-            pid = f"pay-{len(self.payments) + 1}"
+            pid = f"pay-{len(self.payments) + 1}-{uuid.uuid4().hex[:6]}"
             p = {"id": pid, "status": "pending", "paid": False, "amount": body["amount"],
                  "metadata": body["metadata"], "description": body["description"],
                  "confirmation": {"type": "redirect", "confirmation_url": f"https://yoomoney.example/{pid}"}}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Заказ — Ахнуть{% endblock %}
-{% block head %}{% if o.status in ("awaiting_payment", "queued", "generating", "paid") and not (o.paid and not o.answers_complete) %}<meta http-equiv="refresh" content="6">{% endif %}{% endblock %}
+{% block head %}{% if o.status in ("awaiting_payment", "queued", "generating", "paid", "editing") and not (o.paid and not o.answers_complete) %}<meta http-equiv="refresh" content="5">{% endif %}{% endblock %}
 {% block body %}
 <main class="page">
   <p class="kicker">Заказ · {{ tier.title }} · {{ o.amount_rub }} ₽</p>
@@ -13,21 +13,87 @@
     <a class="btn" href="/order/{{ o.public_id }}/form">Заполнить анкету</a>
   {% elif o.status in ("queued", "generating", "paid") %}
     <h1>Открытка готовится</h1>
-    <p class="lead">Это займёт 1–3 минуты. Можно закрыть страницу — пришлём письмо, когда будет готово.</p>
-  {% elif o.status in ("ready", "published") %}
-    <h1>Готово! Посмотрите</h1>
-    <p class="lead hint">Это предпросмотр. Нажимайте, листайте — всё как у получателя.</p>
-    <iframe class="preview" src="/order/{{ o.public_id }}/card" title="Предпросмотр открытки"></iframe>
-    <p class="hint"><a class="link" href="/order/{{ o.public_id }}/card" target="_blank">Открыть на весь экран</a></p>
+    <p class="lead">{% if o.tier == 'prince' %}«Принц» собирается до 5–7 минут: нейросеть рисует сцены, а потом сама проверяет их на телефоне.{% else %}Это займёт 1–3 минуты.{% endif %}
+      Можно закрыть страницу — пришлём письмо на {{ o.email }}, когда будет готово.</p>
   {% elif o.status == "failed" %}
     <h1>Что-то пошло не так</h1>
-    <p class="lead">Нейросеть не справилась с первой попытки. Мы уже видим ошибку и перезапустим генерацию; деньги не пропадут.</p>
-  {% elif o.status == "refunded" %}
-    <h1>Деньги возвращены</h1>
+    <p class="lead">Нейросеть не справилась с этой попыткой. Повтор — бесплатно.</p>
+    <button class="btn" data-api="retry">Попробовать ещё раз</button>
+  {% elif o.status in ("ready", "published", "editing") %}
+
+    {% if o.status == "published" %}
+      <h1>{% if expired %}Срок ссылки истёк{% else %}Открытка опубликована{% endif %}</h1>
+      <div class="box">
+        <p class="hint">Ссылка для получателя{% if o.card_password %} (с паролем){% endif %}:</p>
+        <div class="linkrow"><input class="field" id="cardurl" readonly value="{{ card_url }}"><button class="btn sm" id="copy">Копировать</button></div>
+        <button class="btn ghost" id="share">Отправить…</button>
+        <p class="hint">Работает до: <b>{{ expires }}</b>{% if expired %} — продлите, чтобы ссылка снова открывалась{% endif %}.</p>
+        {% if not o.forever %}<div class="opts" style="margin-top:8px">{% for k, v in ext.items() %}<button class="btn ghost sm" data-extend="{{ k }}">+ {{ v[1] }} · {{ v[0] }} ₽</button>{% endfor %}</div>{% endif %}
+      </div>
+      <div class="box">
+        <a class="btn ghost" href="/order/{{ o.public_id }}/download">Скачать файл открытки</a>
+        <p class="hint">Файл — бонус. Получателю отправляйте ссылку: файл, открытый из WhatsApp или «Файлов» на iPhone, покажется
+          во встроенном просмотрщике без анимаций и нажатий. Музыка работает только по ссылке.</p>
+      </div>
+    {% else %}
+      <h1>{% if o.status == "editing" %}Применяем правку…{% else %}Готово! Посмотрите{% endif %}</h1>
+      <p class="lead hint">Это предпросмотр: нажимайте, листайте — всё как у получателя.</p>
+    {% endif %}
+
+    {% if o.status == "editing" %}<p class="hint">Обычно это меньше минуты. Страница обновится сама.</p>{% endif %}
+    <iframe class="preview" src="/order/{{ o.public_id }}/card" title="Предпросмотр открытки"></iframe>
+    <p class="hint"><a class="link" href="/order/{{ o.public_id }}/card" target="_blank">Открыть на весь экран</a></p>
+
+    <div class="box">
+      <h3>Правки · осталось {{ edits_left }}</h3>
+      {% if o.edit_error %}<p class="err">{{ o.edit_error }}</p>{% endif %}
+      {% if edits_left > 0 %}
+        <textarea class="field" id="edit" maxlength="300" placeholder="Коротко: «убери слово мимо», «время 18:50», «фон потемнее»"></textarea>
+        <button class="btn" id="editgo" {{ 'disabled' if o.status == 'editing' }}>Внести правку</button>
+        <p class="hint">Правка меняет только то, о чём вы просите. Если не получится — она не спишется.</p>
+      {% else %}
+        <p class="hint">Включённые правки ({{ edits_included }}) использованы. Можно докупить:</p>
+      {% endif %}
+      <div class="opts" style="margin-top:8px">{% for q, price in packs.items() %}<button class="btn ghost sm" data-buy="{{ q }}">+{{ q }} {{ 'правка' if q == 1 else 'правки' }} · {{ price }} ₽</button>{% endfor %}</div>
+      {% if versions|length > 1 %}
+      <details class="hint" style="margin-top:12px"><summary>История версий</summary>
+        {% for v in versions[:-1]|reverse %}<p>Версия {{ v.version }}{% if v.request %}: «{{ v.request }}»{% elif v.kind == 'generate' %}: первая{% endif %}
+          <button class="btn ghost sm" data-revert="{{ v.version }}">вернуть</button></p>{% endfor %}
+      </details>
+      {% endif %}
+    </div>
+
+    {% if o.status == "ready" %}
+    <div class="box">
+      <h3>Всё нравится?</h3>
+      <input class="field" id="pw" maxlength="40" placeholder="Пароль на открытку (необязательно)">
+      <button class="btn" id="publish">Опубликовать и получить ссылку</button>
+      <p class="hint">Ссылка работает {{ hosting_days or 7 }} дней, потом её можно продлить. Править можно и после публикации.</p>
+    </div>
+    {% endif %}
   {% else %}
     <h1>Заказ создан</h1>
     <p class="lead">Можно сначала оплатить, а анкету заполнить потом — или наоборот.</p>
     <a class="btn" href="/order/{{ o.public_id }}/form">К анкете</a>
   {% endif %}
+  <p class="err" id="err"></p>
+  <p class="hint">Эта страница — только для вас: по ней можно править и продлевать открытку. Получателю отправляйте ссылку на открытку.</p>
+  <footer class="legal"><a href="/offer">Оферта</a> · <a href="/privacy">Персональные данные</a></footer>
 </main>
+<script>
+const OID = {{ o.public_id|tojson }}, $ = s => document.querySelector(s), err = t => $('#err').textContent = t || '';
+async function api(path, body) {
+  const r = await fetch(`/api/orders/${OID}/${path}`, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body || {})});
+  const j = await r.json().catch(() => ({})); if (!r.ok) { err(j.detail || 'Ошибка'); return null; } return j;
+}
+const go = async (path, body) => { const j = await api(path, body); if (j && j.confirmation_url) location.href = j.confirmation_url; else if (j) location.reload(); };
+document.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => go('buy-edits', {qty: +b.dataset.buy}));
+document.querySelectorAll('[data-extend]').forEach(b => b.onclick = () => go('extend', {period: b.dataset.extend}));
+document.querySelectorAll('[data-revert]').forEach(b => b.onclick = () => go('revert', {version: +b.dataset.revert}));
+document.querySelectorAll('[data-api]').forEach(b => b.onclick = () => go(b.dataset.api));
+const eg = $('#editgo'); if (eg) eg.onclick = () => { const t = $('#edit').value.trim(); if (t.length < 2) return err('Напишите, что поправить'); go('edits', {text: t}); };
+const pb = $('#publish'); if (pb) pb.onclick = () => go('publish', {password: $('#pw').value});
+const cp = $('#copy'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText($('#cardurl').value); cp.textContent = 'Скопировано'; } catch (e) { $('#cardurl').select(); } };
+const sh = $('#share'); if (sh) { if (navigator.share) sh.onclick = () => navigator.share({title: 'Открытка для тебя', url: $('#cardurl').value}).catch(() => {}); else sh.remove(); }
+</script>
 {% endblock %}

@@ -273,10 +273,10 @@ def build_rich_request(order: Order) -> tuple[str, list[dict[str, Any]]]:
     return system, content
 
 
-async def self_check(order: Order, spec: CardSpec, usage: dict[str, Any]) -> CardSpec:
+async def self_check(order: Order, spec: CardSpec, usage: dict[str, Any], rounds: int = 2) -> CardSpec:
     """«Принц»: открыть в браузере на 375px, понажимать, показать скриншоты модели, при необходимости исправить."""
     from app.cards.render import render
-    for round_ in range(2):
+    for round_ in range(rounds):
         html = render(spec, data_uri_photos(order), recipient=order.recipient, inline=True)
         try:
             rep = await checker.check_card(html)
@@ -340,6 +340,8 @@ async def run(s: AsyncSession, order: Order) -> dict:
         log.error("генерация %s: %s", order.public_id, e)
         order.status = OrderStatus.FAILED
         await s.commit()
+        from app import mailer
+        await mailer.send_failed_admin(order, str(e))
         return {"ok": False, "status": order.status, "error": str(e)}
     usage["fake"] = u.get("fake", False)
     spec = sanitize(spec, order.recipient)
@@ -348,4 +350,6 @@ async def run(s: AsyncSession, order: Order) -> dict:
     order.status = OrderStatus.READY
     order.ready_at = datetime.now(timezone.utc)
     await s.commit()
+    from app import mailer
+    await mailer.send_ready(order)
     return {"ok": True, "status": order.status, "usage": usage}

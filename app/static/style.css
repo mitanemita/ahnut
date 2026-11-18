@@ -82,3 +82,15 @@ textarea.field{min-height:110px;resize:vertical}
 .link{color:var(--accent);font-weight:600}
 
 .field.color{width:72px;height:48px;padding:4px;cursor:pointer}
+.box{background:#fff;border:1px solid #eadbd1;border-radius:18px;padding:16px;margin:16px 0;box-shadow:0 2px 8px rgba(60,30,20,.05)}
+.box h3{margin:0 0 10px;font-size:16px}
+.box .btn{margin-top:10px}
+.btn.sm{min-height:40px;padding:9px 14px;font-size:14px}
+.btn.ghost{background:#fff;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none}
+.btn:disabled{opacity:.5}
+button.btn{border:0;font:inherit;font-weight:600;cursor:pointer}
+button.btn.ghost{border:1.5px solid var(--accent)}
+.linkrow{display:flex;gap:8px;align-items:center}.linkrow .field{flex:1;min-width:0;font-size:14px}.linkrow .btn{margin-top:0}
+footer.legal{margin-top:28px;font-size:13px;color:var(--muted)}footer.legal a{color:var(--muted)}
+.legal-doc h2{font-size:18px;margin:24px 0 8px}.legal-doc p,.legal-doc li{font-size:15px;line-height:1.55;color:#3b2620}
+.legal-doc .todo{background:#fff4c2;padding:2px 4px;border-radius:4px}

@@ -22,6 +22,7 @@ FORBIDDEN = [
     (r"https?://", "внешние ссылки"), (r"<\s*/?\s*(script|style|iframe|object|embed|link|meta|base|form)\b", "запрещённый тег"),
     (r"javascript:", "javascript:"), (r"@import", "@import"), (r"feTurbulence", "feTurbulence (тормозит iPhone)"),
     (r"url\(\s*['\"]?(?!data:|#)", "внешние url() в стилях"), (r"\bon[a-z]+\s*=", "inline-обработчики (on...=) в HTML"),
+    (r"\b(parent|top|opener|frameElement)\s*[.\[]", "js: доступ к окну снаружи открытки"),
 ]
 
 
@@ -33,6 +34,8 @@ def code_problems(spec) -> list[str]:
         for part, code in (("html", b.html), ("css", b.css), ("js", b.js)):
             for pat, what in FORBIDDEN:
                 if part != "html" and what.startswith("inline"):
+                    continue
+                if part != "js" and what.startswith("js:"):
                     continue
                 if re.search(pat, code, flags=re.I):
                     out.append(f"свой блок «{b.step or 'custom'}», {part}: нельзя {what}")

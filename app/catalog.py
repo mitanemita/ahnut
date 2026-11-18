@@ -17,8 +17,20 @@ TIERS: dict[str, Tier] = {
     "prince": Tier("prince", "Принц", 2490, 15, True),
 }
 
-# Продление хостинга (этап 5)
-EXTENSIONS = {"month": 149, "year": 490, "forever": 990}
+# Хостинг ссылки, входящий в любой тариф
+HOSTING_DAYS = 7
+# Продление хостинга: период → (цена, дней; None — навсегда)
+EXTENSIONS: dict[str, tuple[int, int | None]] = {"month": (149, 30), "year": (490, 365), "forever": (990, None)}
+EXTENSION_TITLES = {"month": "месяц", "year": "год", "forever": "навсегда"}
+
+# Правки: 2 входят в тариф, дальше — докупаются. Цена зависит от тарифа (у «Принца» правка дороже:
+# каждая проходит самопроверку в браузере). Пакеты: количество → цена, ₽.
+EDITS_INCLUDED = 2
+EDIT_PACKS: dict[str, dict[int, int]] = {
+    "zapiska": {1: 49, 3: 119},
+    "svidanie": {1: 99, 3: 249},
+    "prince": {1: 199, 3: 499},
+}
 
 RECIPIENTS = {
     "partner": "Вторая половинка",
