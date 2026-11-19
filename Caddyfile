@@ -12,9 +12,3 @@
 {$REDIRECT_ADDRS} {
 	redir {$PUBLIC_BASE_URL}{uri} permanent
 }
-
-# Интерфейс n8n (вход по учётке владельца n8n). Вебхук ЮKassa сюда НЕ идёт —
-# его принимает web, проверяет платёж через API ЮKassa и сам вызывает n8n внутри сети.
-{$N8N_ADDR} {
-	reverse_proxy n8n:5678
-}

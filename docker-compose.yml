@@ -8,14 +8,13 @@ services:
     environment:
       SITE_ADDR: ${SITE_ADDR}
       REDIRECT_ADDRS: ${REDIRECT_ADDRS}
-      N8N_ADDR: ${N8N_ADDR}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
       ACME_EMAIL: ${ACME_EMAIL}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [web, n8n]
+    depends_on: [web]
 
   db:
     image: postgres:17-alpine
@@ -49,28 +48,34 @@ services:
     env_file: .env
     environment:
       DB_HOST: db
-      PLAYWRIGHT_WS: ws://browser:3000/
     volumes:
       - files:/app/data/files   # фото и файлы открыток (на диске сервера, том Docker)
     depends_on:
       migrate: { condition: service_completed_successfully }
-      browser: { condition: service_started }
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')"]
       interval: 30s
       timeout: 5s
       retries: 3
 
-  # Браузер для самопроверки открыток «Принца» по скриншоту на 375px (версия = playwright в requirements.txt)
+  # ---- Необязательные сервисы (по умолчанию НЕ запускаются) ----
+  # На проде браузер самопроверки живёт на сервере в Нидерландах (deploy/nl), PLAYWRIGHT_WS в .env указывает туда.
+  # Всё на одной машине (разработка): docker compose --profile browser up -d  и  PLAYWRIGHT_WS=ws://browser:3000/
   browser:
+    profiles: ["browser"]
     build: ./browser
     restart: unless-stopped
     init: true
     mem_limit: 900m
 
+  # n8n не обязателен: без N8N_GENERATE_URL генерация идёт прямо в web. Включить: --profile n8n
+  # (интерфейс — только через SSH-туннель: ssh -L 5678:127.0.0.1:5678 root@<сервер>)
   n8n:
+    profiles: ["n8n"]
     image: n8nio/n8n:2.20.12
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
     mem_limit: 700m
     environment:
       DB_TYPE: postgresdb

@@ -1,0 +1,23 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# Браузер самопроверки: только с IP российского сервера; путь — секретный (он же в PLAYWRIGHT_WS на сервере РФ)
+{$CHECK_DOMAIN} {
+	@ru remote_ip {$RU_SERVER_IP}
+	handle @ru {
+		reverse_proxy browser:3000
+	}
+	respond 403
+}
+
+# Прокси к OpenRouter (если с российского сервера он недоступен): тоже только с IP российского сервера
+{$LLM_DOMAIN} {
+	@ru remote_ip {$RU_SERVER_IP}
+	handle @ru {
+		reverse_proxy https://openrouter.ai {
+			header_up Host openrouter.ai
+		}
+	}
+	respond 403
+}

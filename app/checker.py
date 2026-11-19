@@ -76,7 +76,8 @@ async def _check_card(html: str, max_shots: int) -> CheckReport:
 
     rep = CheckReport()
     async with async_playwright() as pw:
-        browser = await (pw.chromium.connect(settings.playwright_ws) if settings.playwright_ws else pw.chromium.launch())
+        browser = await (pw.chromium.connect(settings.playwright_ws, timeout=30000) if settings.playwright_ws
+                         else pw.chromium.launch())
         try:
             ctx = await browser.new_context(viewport={"width": 375, "height": 740}, device_scale_factor=1,
                                             is_mobile=True, has_touch=True)

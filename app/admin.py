@@ -58,9 +58,17 @@ async def check() -> None:
             r = await c.post(url, json={}, headers={"X-API-KEY": settings.unione_api_key})
         return "ok" if r.status_code == 200 else f"HTTP {r.status_code}: {r.text[:150]}"
 
+    async def browser():
+        if not settings.playwright_ws:
+            return "PLAYWRIGHT_WS не задан — самопроверка «Принца» будет пропускаться"
+        from app import checker
+        rep = await checker.check_card("<!doctype html><main><section>ok</section></main>")
+        return f"ok, браузер отвечает (скриншотов: {len(rep.shots)})"
+
     await probe("ЮKassa", yookassa)
     await probe("OpenRouter", openrouter)
     await probe("UniOne", unione)
+    await probe("Браузер самопроверки", browser)
     print(f"Адрес сайта: {settings.public_base_url}; письма от: {settings.email_from}; поддержка: {settings.support_email}")
 
 
