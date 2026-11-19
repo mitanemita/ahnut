@@ -5,6 +5,12 @@ set -e
 apt-get update
 apt-get install -y docker.io docker-compose-v2 git ufw
 systemctl enable --now docker
+# На сервере с 2–4 ГБ памяти — файл подкачки 2 ГБ, чтобы сборка образов и браузер самопроверки не упирались в память
+if [ "$(awk '/MemTotal/{print int($2/1024/1024)}' /proc/meminfo)" -lt 4 ] && ! swapon --show | grep -q swapfile; then
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  sysctl -w vm.swappiness=10 && echo 'vm.swappiness=10' > /etc/sysctl.d/99-ahnut.conf
+fi
 # Наружу открыты только SSH и веб (n8n и база — только внутри Docker)
 ufw allow OpenSSH
 ufw allow 80/tcp

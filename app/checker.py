@@ -4,6 +4,7 @@
 прокрутку и скриншоты секций — их потом смотрит нейросеть («Принц»).
 В Docker браузер живёт в отдельном сервисе (PLAYWRIGHT_WS), локально — запускается сам.
 """
+import asyncio
 import logging
 import re
 from dataclasses import dataclass, field
@@ -61,7 +62,16 @@ class CheckReport:
         return out
 
 
+# Одна проверка за раз: Chromium ест 300–500 МБ, на маленьком сервере параллельные проверки упрутся в память
+_one_at_a_time = asyncio.Semaphore(1)
+
+
 async def check_card(html: str, max_shots: int = 8) -> CheckReport:
+    async with _one_at_a_time:
+        return await _check_card(html, max_shots)
+
+
+async def _check_card(html: str, max_shots: int) -> CheckReport:
     from playwright.async_api import async_playwright
 
     rep = CheckReport()
